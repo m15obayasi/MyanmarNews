@@ -16,21 +16,35 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
 # =============================
-# Utility
+# Utility (Retry付き)
 # =============================
-def fetch(url):
-    """Irrawaddy の robots.txt に crawl-delay=10 とあるため少し遅延する"""
-    time.sleep(3)
-    r = requests.get(url, timeout=15)
-    r.raise_for_status()
-    return r.text
+def fetch(url, retries=3, wait=5):
+    """Irrawaddy はよく 500 を返すため retry を追加"""
+    for i in range(retries):
+        try:
+            time.sleep(2)
+            r = requests.get(url, timeout=20)
+            if r.status_code >= 500:
+                print(f"Server error {r.status_code}, retry {i+1}/{retries}...")
+                time.sleep(wait)
+                continue
+
+            r.raise_for_status()
+            return r.text
+
+        except Exception as e:
+            print(f"Error fetching {url}: {e}, retry {i+1}/{retries}...")
+            time.sleep(wait)
+
+    print(f"Failed to fetch after {retries} retries: {url}")
+    return None
 
 
+# =============================
 def load_seen():
     if STATE_FILE.exists():
         return set(json.loads(STATE_FILE.read_text()))
     return set()
-
 
 def save_seen(urls):
     STATE_FILE.write_text(json.dumps(sorted(urls), ensure_ascii=False))
@@ -41,6 +55,10 @@ def save_seen(urls):
 # =============================
 def extract_links(max_count=20):
     html = fetch(BASE_URL)
+    if not html:
+        print("トップページ取得失敗。今日は処理を中断します。")
+        return []
+
     soup = BeautifulSoup(html, "html.parser")
 
     urls = []
@@ -71,6 +89,10 @@ def extract_links(max_count=20):
 # =============================
 def fetch_article(url):
     html = fetch(url)
+    if not html:
+        print(f"記事取得失敗: {url}")
+        return None, None
+
     soup = BeautifulSoup(html, "html.parser")
 
     title_tag = soup.find("h1")
@@ -104,9 +126,7 @@ ARTICLE:
 
     res = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
+        messages=[{"role": "user", "content": prompt}],
         temperature=0.3
     )
     return res.choices[0].message.content
@@ -151,20 +171,27 @@ def post_to_hatena(title, html):
 def main():
     today = datetime.now().strftime("%Y-%m-%d")
     seen = load_seen()
+
     links = extract_links()
 
-    new_links = [u for u in links if u not in seen]
-
-    if not new_links:
-        print("No new articles.")
+    if not links:
+        print("リンク抽出失敗。処理を終了します。")
         return
 
-    print(f"{len(new_links)} new articles found.")
+    new_links = [u for u in links if u not in seen]
+    print(f"New articles: {len(new_links)}")
+
+    if not new_links:
+        print("新着なし。終了します。")
+        return
 
     html = f"<h1>Irrawaddy ミャンマーニュースまとめ ({today})</h1><hr>"
 
     for url in new_links:
         title, body = fetch_article(url)
+        if not body:
+            continue
+
         summary = summarize(title, body)
 
         html += f"<h2>{title}</h2>"
@@ -174,7 +201,6 @@ def main():
         seen.add(url)
 
     save_seen(seen)
-
     post_to_hatena(f"Irrawaddy ミャンマーニュースまとめ ({today})", html)
 
 
