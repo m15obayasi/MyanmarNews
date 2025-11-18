@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests beautifulsoup4 openai
+          pip install requests beautifulsoup4 openai feedparser
 
       - name: Run script
         env:
