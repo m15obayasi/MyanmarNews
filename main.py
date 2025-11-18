@@ -53,10 +53,12 @@ def save_seen(urls):
 # =============================
 # Extract article links
 # =============================
+NEWS_URL = "https://www.irrawaddy.com/news"
+
 def extract_links(max_count=20):
-    html = fetch(BASE_URL)
+    html = fetch(NEWS_URL)
     if not html:
-        print("トップページ取得失敗。今日は処理を中断します。")
+        print("ニュースページ取得失敗。今日は中断します。")
         return []
 
     soup = BeautifulSoup(html, "html.parser")
@@ -71,7 +73,7 @@ def extract_links(max_count=20):
         else:
             continue
 
-        if url.endswith(".html") and ("/news/" in url or "/opinion/" in url):
+        if url.endswith(".html") and "/news/" in url:
             urls.append(url)
 
     uniq = []
