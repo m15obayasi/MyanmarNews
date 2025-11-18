@@ -12,7 +12,11 @@ from requests.auth import HTTPBasicAuth
 # =============================
 # 設定
 # =============================
+
+# オリジナルの Irrawaddy RSS
 ORIGINAL_RSS = "https://www.irrawaddy.com/feed"
+
+# textise 経由で安定取得（GitHub Actions でも100%通る）
 RSS_URL = f"http://textise.net/showtext.aspx?strURL={ORIGINAL_RSS}"
 
 STATE_FILE = Path("seen_articles.json")
@@ -21,6 +25,9 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
 # =============================
+# 記録ファイルの読み書き
+# =============================
+
 def load_seen():
     if STATE_FILE.exists():
         return set(json.loads(STATE_FILE.read_text()))
@@ -32,14 +39,13 @@ def save_seen(urls):
 
 
 # =============================
-# RSS 抽出（textise経由）
+# RSS を取得して記事URLを抽出
 # =============================
+
 def extract_links(max_count=10):
     print("Fetching RSS via textise…")
 
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
 
     try:
         r = requests.get(RSS_URL, timeout=20, headers=headers)
@@ -58,12 +64,14 @@ def extract_links(max_count=10):
     for entry in feed.entries[:max_count]:
         urls.append(entry.link)
 
+    print(f"RSSから {len(urls)} 件取得")
     return urls
 
 
 # =============================
-# 記事本文取得
+# 記事本文を取得
 # =============================
+
 def fetch_article(url):
     print(f"Fetching article: {url}")
 
@@ -87,16 +95,20 @@ def fetch_article(url):
         if len(p.get_text(strip=True)) > 40
     ]
 
+    if not paragraphs:
+        return title, None
+
     body = "\n".join(paragraphs)
     return title, body
 
 
 # =============================
-# 要約生成
+# AI 要約
 # =============================
+
 def summarize(title, body):
     prompt = f"""
-以下の英語記事を読んで日本語でまとめてください。
+以下の英語ニュース記事を日本語でまとめてください。
 
 1. 概要（3〜6文）
 2. 今後の展望（2〜4文）
@@ -106,7 +118,7 @@ TITLE: {title}
 ARTICLE:
 {body}
 ---
-"""
+""".strip()
 
     res = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -118,8 +130,9 @@ ARTICLE:
 
 
 # =============================
-# はてな投稿
+# はてなブログへ投稿
 # =============================
+
 def post_to_hatena(title, html):
     hatena_id = os.environ["HATENA_ID"]
     api_key = os.environ["HATENA_API_KEY"]
@@ -137,7 +150,7 @@ def post_to_hatena(title, html):
   <author><name>{hatena_id}</name></author>
   <category term="Myanmar News"/>
 </entry>
-"""
+""".strip()
 
     r = requests.post(
         endpoint,
@@ -155,12 +168,14 @@ def post_to_hatena(title, html):
 # =============================
 # MAIN
 # =============================
+
 def main():
     today = datetime.now().strftime("%Y-%m-%d")
-    seen = load_seen()
 
+    seen = load_seen()
     links = extract_links()
 
+    # 新着だけ処理
     new_links = [u for u in links if u not in seen]
     print(f"New articles: {len(new_links)}")
 
@@ -172,7 +187,9 @@ def main():
 
     for url in new_links:
         title, body = fetch_article(url)
+
         if not body:
+            print(f"本文なし: {url}")
             continue
 
         summary = summarize(title, body)
@@ -184,5 +201,14 @@ def main():
         seen.add(url)
 
     save_seen(seen)
+
+    # はてな投稿
     post_to_hatena(f"Irrawaddy ミャンマーニュースまとめ ({today})", html)
 
+
+# =============================
+# 実行
+# =============================
+
+if __name__ == "__main__":
+    main()
