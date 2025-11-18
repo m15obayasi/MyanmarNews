@@ -12,14 +12,14 @@ from requests.auth import HTTPBasicAuth
 # =============================
 # 設定
 # =============================
-RSS_URL = "https://www.irrawaddy.com/feed"  # 全記事RSS
+ORIGINAL_RSS = "https://www.irrawaddy.com/feed"
+RSS_URL = f"http://textise.net/showtext.aspx?strURL={ORIGINAL_RSS}"
+
 STATE_FILE = Path("seen_articles.json")
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
-# =============================
-# Utility
 # =============================
 def load_seen():
     if STATE_FILE.exists():
@@ -32,14 +32,26 @@ def save_seen(urls):
 
 
 # =============================
-# RSS から記事URLを取得
+# RSS 抽出（textise経由）
 # =============================
 def extract_links(max_count=10):
-    print("Fetching RSS…")
-    feed = feedparser.parse(RSS_URL)
+    print("Fetching RSS via textise…")
+
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    try:
+        r = requests.get(RSS_URL, timeout=20, headers=headers)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"RSS取得失敗: {e}")
+        return []
+
+    feed = feedparser.parse(r.text)
 
     if not feed.entries:
-        print("RSS取得失敗。終了します。")
+        print("RSS パース失敗。終了します。")
         return []
 
     urls = []
@@ -50,13 +62,15 @@ def extract_links(max_count=10):
 
 
 # =============================
-# 記事本文取得（RSSの本文は短いのでHTML側も取得する）
+# 記事本文取得
 # =============================
 def fetch_article(url):
     print(f"Fetching article: {url}")
 
+    headers = {"User-Agent": "Mozilla/5.0"}
+
     try:
-        r = requests.get(url, timeout=20)
+        r = requests.get(url, timeout=20, headers=headers)
         r.raise_for_status()
     except Exception as e:
         print(f"記事取得失敗: {e}")
@@ -64,11 +78,9 @@ def fetch_article(url):
 
     soup = BeautifulSoup(r.text, "html.parser")
 
-    # タイトル
     title_tag = soup.find("h1")
     title = title_tag.get_text(strip=True) if title_tag else url
 
-    # 本文（pタグの文章を抽出）
     paragraphs = [
         p.get_text(strip=True)
         for p in soup.find_all("p")
@@ -80,11 +92,11 @@ def fetch_article(url):
 
 
 # =============================
-# 要約生成（OpenAI）
+# 要約生成
 # =============================
 def summarize(title, body):
     prompt = f"""
-以下の英語記事を読んで、日本語で記事の内容をまとめてください。
+以下の英語記事を読んで日本語でまとめてください。
 
 1. 概要（3〜6文）
 2. 今後の展望（2〜4文）
@@ -98,9 +110,7 @@ ARTICLE:
 
     res = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
+        messages=[{"role": "user", "content": prompt}],
         temperature=0.3
     )
 
@@ -108,7 +118,7 @@ ARTICLE:
 
 
 # =============================
-# はてなブログ投稿
+# はてな投稿
 # =============================
 def post_to_hatena(title, html):
     hatena_id = os.environ["HATENA_ID"]
@@ -127,7 +137,7 @@ def post_to_hatena(title, html):
   <author><name>{hatena_id}</name></author>
   <category term="Myanmar News"/>
 </entry>
-""".strip()
+"""
 
     r = requests.post(
         endpoint,
@@ -147,8 +157,8 @@ def post_to_hatena(title, html):
 # =============================
 def main():
     today = datetime.now().strftime("%Y-%m-%d")
-
     seen = load_seen()
+
     links = extract_links()
 
     new_links = [u for u in links if u not in seen]
@@ -162,9 +172,7 @@ def main():
 
     for url in new_links:
         title, body = fetch_article(url)
-
         if not body:
-            print(f"スキップ: {url}")
             continue
 
         summary = summarize(title, body)
@@ -176,11 +184,4 @@ def main():
         seen.add(url)
 
     save_seen(seen)
-
-    # 投稿実行
-    post_to_hatena(f"Irrawaddy ミャンマーニュースまとめ ({today})", html)
-
-
-if __name__ == "__main__":
-    main()
-
+    post_to_hatena(f"Irrawaddy ミャンマーニュースまとめ
