@@ -184,4 +184,5 @@ def main():
         seen.add(url)
 
     save_seen(seen)
-    post_to_hatena(f"Irrawaddy ミャンマーニュースまとめ
+    post_to_hatena(f"Irrawaddy ミャンマーニュースまとめ ({today})", html)
+
