@@ -7,20 +7,27 @@ import requests
 import feedparser
 from bs4 import BeautifulSoup
 from google import genai
+from google.genai import types
+from requests.auth import HTTPBasicAuth
 
-# ============================
+
+# =============================
 # 設定
-# ============================
+# =============================
 
-RSS_URL = "https://myanmar-now.org/en/rss"
+NEWS_SOURCES = [
+    ("DVB", "https://english.dvb.no/feed/"),
+    ("Mizzima", "https://mizzima.com/feed"),
+]
+
 STATE_FILE = Path("seen_articles.json")
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 
-# ============================
+# =============================
 # seen 記録の読み書き
-# ============================
+# =============================
 
 def load_seen():
     if STATE_FILE.exists():
@@ -31,169 +38,191 @@ def save_seen(urls):
     STATE_FILE.write_text(json.dumps(sorted(urls), ensure_ascii=False))
 
 
-# ============================
+# =============================
 # RSS取得
-# ============================
+# =============================
 
-def extract_links(max_count=10):
-    print("Fetching Myanmar Now RSS...")
-
-    headers = {"User-Agent": "Mozilla/5.0"}
+def fetch_rss(source_name, rss_url, max_count=10):
+    print(f"Fetching {source_name} RSS...")
 
     try:
-        r = requests.get(RSS_URL, timeout=20, headers=headers)
+        r = requests.get(rss_url, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
         r.raise_for_status()
     except Exception as e:
-        print(f"RSS取得失敗: {e}")
+        print(f"RSS取得失敗（{source_name}）: {e}")
         return []
 
     feed = feedparser.parse(r.text)
 
     if not feed.entries:
-        print("RSSパース失敗。終了します。")
+        print(f"{source_name} RSS パース失敗。")
         return []
-
-    print(f"RSSから {len(feed.entries[:max_count])} 件取得")
 
     urls = []
     for entry in feed.entries[:max_count]:
-        urls.append(entry.link)
+        title = entry.title if "title" in entry else "No title"
+        url = entry.link
+        urls.append({"source": source_name, "title": title, "url": url})
 
+    print(f"{source_name}: {len(urls)} 件取得")
     return urls
 
 
-# ============================
-# 記事本文の取得
-# ============================
+# =============================
+# 記事本文取得
+# =============================
 
-def fetch_article_body(url):
-    headers = {"User-Agent": "Mozilla/5.0"}
-
+def fetch_article(url):
+    print(f"Fetching article: {url}")
     try:
-        r = requests.get(url, timeout=20, headers=headers)
+        r = requests.get(url, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
         r.raise_for_status()
-    except Exception:
-        print("本文取得失敗")
-        return ""
+    except Exception as e:
+        print(f"記事取得失敗: {e}")
+        return None
 
     soup = BeautifulSoup(r.text, "html.parser")
 
-    # Myanmar Now の記事本文は <div class="field-item even"> 配下に多い
-    article_div = soup.find("div", class_="field-item")
+    # メイン記事コンテナ探索（DVB & Mizzima に対応）
+    selectors = [
+        "article",
+        ".post-content",
+        ".entry-content",
+        ".content",
+        ".node-content",
+    ]
 
-    if not article_div:
-        return ""
+    for sel in selectors:
+        block = soup.select_one(sel)
+        if block:
+            text = block.get_text(separator="\n", strip=True)
+            if len(text) > 200:
+                return text
 
-    # テキスト抽出
-    text = article_div.get_text(separator="\n", strip=True)
-
-    return text
+    print("→ 専用の要素が見つからず、全文抽出もうまくいかず")
+    return None
 
 
-# ============================
-# Gemini で記事生成
-# ============================
+# =============================
+# Gemini 要約（日本語）
+# =============================
 
-def generate_article(title_en, body_en):
+def summarize(text, source_name, title, url):
     prompt = f"""
-あなたは日本語のニュース編集者です。
-以下の英語ニュース本文をもとに、**日本語で記事を作成**してください。
+あなたはプロの国際ニュース解説者です。
+以下はミャンマーに関するニュース記事です。
+これを **ですます調** で、構造化されたわかりやすい日本語要約にしてください。
 
-【必須ルール】
-- **記事タイトルは自然な日本語訳で「常体（〜した／〜を発表）」にする**
-- **本文は丁寧な「です・ます調」にする**
-- 文章量は **500〜900字**
-- 構成は次の3つを必ず含める：
-   1) 要約（です・ます調）
-   2) 背景解説（です・ます調）
-   3) 今後の見通し（です・ます調）
+要求：
+- 文章量は多め（400〜700文字）
+- 背景や補足文脈も説明
+- 影響・今後の展望も含める
+- タイトルも自然な日本語に変換する
+- 途中に箇条書きも使用OK
 
-【英語のタイトル】
-{title_en}
+【メディア】{source_name}  
+【記事タイトル】{title}  
+【記事URL】{url}  
 
-【英語本文】
-{body_en}
-
-丁寧で自然な日本語ニュース記事を生成してください。
+【本文】
+{text}
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash-thinking",
-        contents=prompt,
-    )
+    try:
+        res = client.models.generate_content(
+            model="gemini-1.5-flash-latest",
+            contents=prompt
+        )
+        return res.text
+    except Exception as e:
+        print("Gemini要約失敗:", e)
+        return None
 
-    return response.text.strip()
 
-
-# ============================
+# =============================
 # はてなブログ投稿
-# ============================
+# =============================
 
 def post_to_hatena(title, content):
-    hatena_id = os.environ["HATENA_ID"]
-    api_key = os.environ["HATENA_API_KEY"]
-    blog_id = os.environ["HATENA_BLOG_ID"]
+    USER = os.environ["HATENA_ID"]
+    APIKEY = os.environ["HATENA_API_KEY"]
+    BLOG_ID = os.environ["HATENA_BLOG_ID"]
 
-    url = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
+    endpoint = f"https://blog.hatena.ne.jp/{USER}/{BLOG_ID}/atom/entry"
 
-    headers = {
-        "Content-Type": "application/xml",
-    }
+    updated = datetime.utcnow().isoformat() + "Z"
 
-    # XML生成
-    entry_xml = f"""
+    xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom">
   <title>{title}</title>
-  <content type="text/plain">{content}</content>
+  <updated>{updated}</updated>
+  <author><name>{USER}</name></author>
+  <content type="text/plain">
+{content}
+  </content>
 </entry>
 """
 
-    res = requests.post(url, data=entry_xml.encode("utf-8"), headers=headers,
-                        auth=(hatena_id, api_key))
+    headers = {"Content-Type": "application/xml"}
 
-    if res.status_code not in (200, 201):
-        print("Hatena 投稿失敗:", res.status_code)
-        print(res.text)
-        return False
+    r = requests.post(endpoint, data=xml.encode("utf-8"),
+                      auth=HTTPBasicAuth(USER, APIKEY),
+                      headers=headers)
 
-    print("Hatena 投稿成功:", res.status_code)
-    return True
+    if r.status_code not in [200, 201]:
+        print("Hatena 投稿失敗:", r.status_code)
+        print(r.text)
+    else:
+        print("Hatena 投稿成功！")
 
 
-# ============================
+# =============================
 # メイン処理
-# ============================
+# =============================
 
 def main():
     seen = load_seen()
-    urls = extract_links()
+    all_new_items = []
 
-    new_urls = [u for u in urls if u not in seen]
-    print(f"New articles: {len(new_urls)}")
+    # ■③ DVB + ④ Mizzima から収集
+    for source_name, rss in NEWS_SOURCES:
+        items = fetch_rss(source_name, rss)
+        for it in items:
+            if it["url"] not in seen:
+                all_new_items.append(it)
 
-    if not new_urls:
+    print(f"New articles: {len(all_new_items)}")
+
+    if not all_new_items:
         print("新着なし。終了します。")
         return
 
-    for url in new_urls:
-        print(f"Fetching article: {url}")
-        body_en = fetch_article_body(url)
+    # 記事ごとに本文→要約
+    summaries = []
+    used_urls = []
 
-        if not body_en:
-            print("本文なし。スキップ。")
-            seen.add(url)
+    for it in all_new_items:
+        body = fetch_article(it["url"])
+        if not body:
             continue
 
-        # 英語タイトルを取得する（簡易）
-        title_en = url.split("/")[-2].replace("-", " ").title()
+        summary = summarize(body, it["source"], it["title"], it["url"])
+        if summary:
+            summaries.append(f"■ **{it['source']}：{it['title']}（日本語タイトル変換済み）**\n\n{summary}\n\n---\n")
+            used_urls.append(it["url"])
 
-        article = generate_article(title_en, body_en)
+    # seen 更新
+    if used_urls:
+        seen |= set(used_urls)
+        save_seen(seen)
 
-        success = post_to_hatena(title_en, article)
-        if success:
-            seen.add(url)
+    # はてなに投稿
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    post_title = f"ミャンマー情勢ニュースまとめ（DVB & Mizzima） - {today}"
 
-    save_seen(seen)
+    post_body = "# ミャンマー情勢ニュースまとめ\n\n" + "".join(summaries)
+
+    post_to_hatena(post_title, post_body)
 
 
 if __name__ == "__main__":
