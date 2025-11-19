@@ -2,12 +2,14 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
+import xml.sax.saxutils as saxutils
 
 import requests
 import feedparser
 from bs4 import BeautifulSoup
 from google import genai
 from requests.auth import HTTPBasicAuth
+import markdown
 
 # =====================================
 # 設定
@@ -37,7 +39,6 @@ def load_seen():
     if STATE_FILE.exists():
         return set(json.loads(STATE_FILE.read_text()))
     return set()
-
 
 def save_seen(urls):
     STATE_FILE.write_text(json.dumps(sorted(list(urls)), ensure_ascii=False))
@@ -86,7 +87,7 @@ def fetch_rss(name, url):
 
 
 # =====================================
-# Gemini 要約
+# Gemini 要約（Markdown生成）
 # =====================================
 
 def summarize_with_gemini(article):
@@ -98,62 +99,74 @@ def summarize_with_gemini(article):
 以下はミャンマーに関するニュースです。
 日本語で、以下の4点を満たす形でまとめてください。
 
-1. 日本語タイトルを新しく生成（内容が分かる、硬派なニュースタイトル）
-2. 記事概要（ですます調 5〜10行）
-3. 背景（必要なら5〜10行）
+1. 記事内容が分かる日本語ニュースタイトル（硬め）
+2. 記事概要（ですます調、5〜10行）
+3. 背景説明（必要なら5〜10行）
 4. 今後の見通し（5〜10行）
 
 元記事タイトル: {title}
 出典: {source}
 URL: {link}
 
-※「はい、承知しました」などの前置きは絶対に入れない
-※適切に段落を改行すること
+※前置きは禁止（例:「はい、承知しました」）
+※適切に段落を分けて Markdown 形式で回答
 """
 
     response = client.models.generate_content(
         model=MODEL,
         contents=prompt
     )
-
     text = response.text
 
-    # Geminiの返答から最初の行をタイトル扱いする
     lines = text.strip().split("\n")
-    jp_title = lines[0].replace("**", "").strip()
+    jp_title = lines[0].replace("#", "").replace("*", "").strip()
+    body_md = "\n".join(lines[1:]).strip()
 
-    body = "\n".join(lines[1:]).strip()
-
-    return jp_title, body
+    return jp_title, body_md
 
 
 # =====================================
-# はてなブログ投稿
+# はてなブログ投稿（HTML & XML安全）
 # =====================================
 
-def post_to_hatena(title, body, original_url):
+def markdown_to_html(md_text):
+    """Markdown → HTML（安全でシンプルな変換）"""
+    return markdown.markdown(md_text)
+
+
+def escape_xml(s):
+    """XML用エスケープ"""
+    return saxutils.escape(s)
+
+
+def post_to_hatena(title, body_md, original_url):
     print("Posting to Hatena Blog...")
+
+    # Markdown → HTML
+    body_html = markdown_to_html(body_md)
+
+    # 元記事URLを下部に追加
+    body_html += f"<p><a href='{original_url}'>元記事はこちら</a></p>"
+
+    # XMLエスケープ（HTMLタグは残すため CDATA 使用）
+    content_block = f"<![CDATA[\n{body_html}\n]]>"
 
     updated = datetime.utcnow().isoformat() + "Z"
 
-    xml = f"""
-<?xml version="1.0" encoding="utf-8"?>
+    xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom">
-  <title>{title}</title>
+  <title>{escape_xml(title)}</title>
   <updated>{updated}</updated>
-  <content type="text/plain">
-{body}
-
-元記事URL: {original_url}
+  <content type="text/html">
+    {content_block}
   </content>
 </entry>
 """
 
     url = f"https://blog.hatena.ne.jp/{HATENA_ID}/{HATENA_BLOG_ID}/atom/entry"
-
     auth = HTTPBasicAuth(HATENA_ID, HATENA_API_KEY)
-    headers = {"Content-Type": "application/xml"}
 
+    headers = {"Content-Type": "application/xml"}
     r = requests.post(url, data=xml.encode("utf-8"), headers=headers, auth=auth)
 
     if r.status_code in [200, 201]:
@@ -191,18 +204,17 @@ def main():
         print("新記事なし。終了します。")
         return
 
-    # 新記事を1つずつ投稿
+    # 新記事ごとに投稿
     for a in new_articles:
         print("Summarizing:", a["title"])
 
-        jp_title, jp_body = summarize_with_gemini(a)
-        full_body = jp_body + "\n"
+        title, body_md = summarize_with_gemini(a)
+        ok = post_to_hatena(title, body_md, a["link"])
 
-        ok = post_to_hatena(jp_title, full_body, a["link"])
         if ok:
             new_seen.add(a["link"])
 
-    # seen を更新
+    # seen 保存
     save_seen(new_seen)
     print("完了しました！")
 
