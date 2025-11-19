@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
+
 import requests
 import feedparser
 from bs4 import BeautifulSoup
@@ -16,7 +17,6 @@ from requests.auth import HTTPBasicAuth
 RSS_URL = "https://myanmar-now.org/en/rss"
 STATE_FILE = Path("seen_articles.json")
 
-# Gemini クライアント
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 
@@ -63,7 +63,7 @@ def extract_links(max_count=10):
 
 
 # =============================
-# ページ本文の取得
+# 記事本文の取得（完全対応版）
 # =============================
 
 def fetch_article(url):
@@ -78,18 +78,38 @@ def fetch_article(url):
 
     soup = BeautifulSoup(r.text, "html.parser")
 
-    # タイトル取得
-    title = soup.find("h1")
-    title = title.text.strip() if title else "No Title"
+    # --- タイトル取得 ---
+    title_tag = soup.find("h1")
+    title = title_tag.get_text(strip=True) if title_tag else "No Title"
 
-    # 本文取得
-    article_div = soup.find("div", class_="content-article")
-    if not article_div:
-        print("本文取得失敗")
-        return title, ""
+    # --- 本文候補の複数パターン ---
+    selectors = [
+        "div.content-body",                       # 最近の Myanmar Now の本文
+        'div[property="content:encoded"]',        # 別の本文パターン
+        "div.field-item.even",                    # Drupalベースの本文
+    ]
 
-    paragraphs = [p.text.strip() for p in article_div.find_all("p")]
-    body = "\n".join(paragraphs)
+    body = ""
+
+    for selector in selectors:
+        section = soup.select_one(selector)
+        if section:
+            paragraphs = [p.get_text(strip=True) for p in section.find_all("p")]
+            body = "\n".join(paragraphs)
+            if body.strip():
+                break
+
+    # --- フォールバック（最終手段） ---
+    if not body.strip():
+        print("→ 専用クラスで本文を取得できず。フォールバックとして <article> 全文を探索します")
+        article = soup.find("article")
+        if article:
+            paragraphs = [p.get_text(strip=True) for p in article.find_all("p")]
+            body = "\n".join(paragraphs)
+
+    # --- それでもダメなら空のまま ---
+    if not body.strip():
+        print("本文取得失敗（どのパターンでも見つからず）")
 
     return title, body
 
@@ -104,7 +124,8 @@ def summarize(title, body):
 
     prompt = f"""
 あなたはプロの国際情勢アナリストです。
-以下のミャンマー関連ニュースを **日本語で要約** し、最後に **今後の展望** を専門家目線で箇条書きで書いてください。
+以下のミャンマー関連ニュースを **日本語で要約** し、
+最後に **今後の展望を3〜5点、箇条書き** で書いてください。
 
 ---
 記事タイトル:
@@ -141,7 +162,7 @@ def summarize(title, body):
 def post_to_hatena(title, content):
     hatena_id = os.environ["HATENA_ID"]
     api_key = os.environ["HATENA_API_KEY"]
-    blog_id = os.environ["HATENA_BLOG_ID"]
+    blog_id = os.environ["HATENA_BLOG_ID"]  # 例: yangon.tokyo
 
     url = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
 
@@ -171,7 +192,7 @@ def post_to_hatena(title, content):
 
 
 # =============================
-# メイン処理
+# メイン
 # =============================
 
 def main():
@@ -199,7 +220,7 @@ def main():
 
         all_summaries += f"## {title}\n\n{summary}\n\n---\n\n"
 
-    # はてなに投稿
+    # はてな投稿
     today = datetime.now().strftime("%Y-%m-%d")
     post_to_hatena(
         f"Myanmar Now ニュースまとめ（{today}）",
