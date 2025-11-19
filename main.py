@@ -1,6 +1,5 @@
 import os
 import json
-import html
 from datetime import datetime
 from pathlib import Path
 
@@ -8,9 +7,8 @@ import requests
 import feedparser
 from bs4 import BeautifulSoup
 from google import genai
-from markdown import markdown
 from requests.auth import HTTPBasicAuth
-
+import markdown
 
 # =====================================
 # 設定
@@ -25,12 +23,11 @@ STATE_FILE = Path("seen_articles.json")
 
 HATENA_ID = os.environ["HATENA_ID"]
 HATENA_API_KEY = os.environ["HATENA_API_KEY"]
-HATENA_BLOG_ID = os.environ["HATENA_BLOG_ID"]  # 例: yangon.hateblo.jp
+HATENA_BLOG_ID = os.environ["HATENA_BLOG_ID"]
 
 # Gemini 初期化
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 MODEL = "gemini-2.0-flash"
-
 
 # =====================================
 # seen 記録
@@ -40,7 +37,6 @@ def load_seen():
     if STATE_FILE.exists():
         return set(json.loads(STATE_FILE.read_text()))
     return set()
-
 
 def save_seen(urls):
     STATE_FILE.write_text(json.dumps(sorted(list(urls)), ensure_ascii=False))
@@ -101,18 +97,32 @@ def summarize_with_gemini(article):
 以下はミャンマーに関するニュースです。
 日本語で、以下の4点を満たす形でまとめてください。
 
-1. 日本語タイトルを新しく生成（内容が分かる、硬派なニュースタイトル）
-2. 記事概要（です・ます調、5〜10行）
-3. 背景（必要なら5〜10行）
+1. 日本語タイトルを新しく生成（硬派で内容が分かる）
+2. 記事概要（ですます調 5〜10行）
+3. 背景（5〜10行）
 4. 今後の見通し（5〜10行）
+
+出力フォーマット（絶対にこの形式で出力）：
+
+# タイトル
+
+## 概要
+本文…
+
+## 背景
+本文…
+
+## 今後の見通し
+本文…
+
+元記事URL: <URL>
 
 元記事タイトル: {title}
 出典: {source}
 URL: {link}
 
-※「はい、承知しました」などの前置きは絶対に入れない
-※適切に段落を改行すること
-※Markdown形式で出力すること（## 見出し を含む）
+※「はい、承知しました」などの前置き禁止
+※見出しは必ず Markdown の #, ## を使う
 """
 
     response = client.models.generate_content(
@@ -120,52 +130,49 @@ URL: {link}
         contents=prompt
     )
 
-    text = response.text.strip()
-
-    return text   # Markdown のまま返す
+    return response.text.strip()
 
 
 # =====================================
-# はてなブログ投稿（Markdown → HTML対応）
+# Markdown → HTML 変換（重要）
 # =====================================
 
-def post_to_hatena(md_text, original_url):
+def md_to_html(md_text: str) -> str:
+    """
+    必ず <h1> <h2> <p> に変換されるよう Markdown を HTML へ。
+    """
+    html = markdown.markdown(
+        md_text,
+        extensions=["extra"]
+    )
+    return html
+
+
+# =====================================
+# はてなブログ投稿
+# =====================================
+
+def post_to_hatena(title, html_body, original_url):
     print("Posting to Hatena Blog...")
-
-    # Markdown → HTML
-    html_body = markdown(md_text)
-
-    # HTML内の元記事リンク追加
-    html_body += f'<p>元記事URL：<a href="{html.escape(original_url)}">{html.escape(original_url)}</a></p>'
-
-    # 最初の <h1> または 最初の行をタイトル扱いにする
-    soup = BeautifulSoup(html_body, "lxml")
-
-    # タイトル抽出
-    h1 = soup.find("h1")
-    if h1:
-        title = h1.text.strip()
-        h1.decompose()  # h1を本文から削除
-    else:
-        # h1 がない場合は最初の行
-        title = md_text.split("\n")[0].strip().replace("#", "").strip()
-
-    esc_title = html.escape(title)
 
     updated = datetime.utcnow().isoformat() + "Z"
 
     xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom">
-  <title>{esc_title}</title>
+  <title>{title}</title>
   <updated>{updated}</updated>
   <content type="text/html">
+<![CDATA[
 {html_body}
+
+<p>元記事URL: <a href="{original_url}">{original_url}</a></p>
+]]>
   </content>
 </entry>
 """
 
-    # 投稿先URL
     url = f"https://blog.hatena.ne.jp/{HATENA_ID}/{HATENA_BLOG_ID}/atom/entry"
+
     auth = HTTPBasicAuth(HATENA_ID, HATENA_API_KEY)
     headers = {"Content-Type": "application/xml"}
 
@@ -191,7 +198,7 @@ def main():
 
     all_articles = []
 
-    # RSS 全部取得
+    # RSS全部取得
     for name, url in RSS_SOURCES:
         items = fetch_rss(name, url)
         all_articles.extend(items)
@@ -206,13 +213,17 @@ def main():
         print("新記事なし。終了します。")
         return
 
-    # 新記事を1件ずつ投稿
+    # 新記事を1つずつ投稿
     for a in new_articles:
         print("Summarizing:", a["title"])
 
         md_text = summarize_with_gemini(a)
+        html_body = md_to_html(md_text)
 
-        ok = post_to_hatena(md_text, a["link"])
+        # Markdown先頭のタイトル行を取得
+        first_line = md_text.split("\n")[0].replace("#", "").strip()
+
+        ok = post_to_hatena(first_line, html_body, a["link"])
         if ok:
             new_seen.add(a["link"])
 
