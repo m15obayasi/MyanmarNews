@@ -20,7 +20,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests beautifulsoup4 feedparser google-genai lxml
+          pip install \
+            requests \
+            beautifulsoup4 \
+            feedparser \
+            google-genai \
+            lxml \
+            markdown
 
       - name: Run script
         env:
