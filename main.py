@@ -2,13 +2,12 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
+import html
 
 import requests
 import feedparser
-from bs4 import BeautifulSoup
 from google import genai
 from requests.auth import HTTPBasicAuth
-
 
 # =====================================
 # 設定
@@ -21,7 +20,7 @@ RSS_SOURCES = [
 
 STATE_FILE = Path("seen_articles.json")
 
-HATENA_ID = os.environ["HATENA_ID"]          # 例: m15obayasi
+HATENA_ID = os.environ["HATENA_ID"]            # 例: m15obayasi
 HATENA_API_KEY = os.environ["HATENA_API_KEY"]
 HATENA_BLOG_ID = os.environ["HATENA_BLOG_ID"]  # 例: yangon.hateblo.jp
 
@@ -36,7 +35,10 @@ MODEL = "gemini-2.0-flash"
 
 def load_seen():
     if STATE_FILE.exists():
-        return set(json.loads(STATE_FILE.read_text()))
+        try:
+            return set(json.loads(STATE_FILE.read_text()))
+        except:
+            return set()
     return set()
 
 
@@ -78,7 +80,7 @@ def fetch_rss(name, url):
         articles.append({
             "source": name,
             "title": title,
-            "summary": BeautifulSoup(summary, "html.parser").get_text(),
+            "summary": summary,
             "link": link,
             "published": published,
         })
@@ -87,7 +89,7 @@ def fetch_rss(name, url):
 
 
 # =====================================
-# Gemini 要約（A案仕様）
+# Gemini 要約
 # =====================================
 
 def summarize_with_gemini(article):
@@ -97,62 +99,65 @@ def summarize_with_gemini(article):
 
     prompt = f"""
 以下はミャンマーに関するニュースです。
-日本語で、以下の形式に従ってまとめてください。
+日本語で、以下の4点を満たす形でまとめてください。
 
-# 日本語タイトル（内容が分かる硬派なタイトル）
-※ 新しく生成すること（元記事タイトルの直訳でも意訳でも可）
-
-## 記事概要（です・ます調で5〜10行）
-- 重要ポイントを整理して書く
-- 読みやすく改行を入れる
-
-## 背景（必要なら5〜10行）
-- 歴史・政治・軍事情勢など記事理解に必要な情報を書く
-
-## 今後の見通し（5〜10行）
-- 予測や影響などを落ち着いた口調で書く
+1. 日本語タイトルを新しく生成（内容が分かる硬派なニュースタイトル）
+2. 記事概要（ですます調 5〜10行）
+3. 背景（必要なら5〜10行）
+4. 今後の見通し（5〜10行）
 
 元記事タイトル: {title}
 出典: {source}
 URL: {link}
 
-※ 前置きの「承知しました」「この記事は〜」は絶対に書かない
-※ Markdown形式で整形すること
+※「はい、承知しました」などの前置きは禁止
+※ Markdown記号(#, *, >, -)を使わないこと
+※ XMLに安全な日本語テキストのみ使用すること
 """
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt
-    )
+    # 最大3回リトライ（429対策）
+    for i in range(3):
+        try:
+            response = client.models.generate_content(
+                model=MODEL,
+                contents=prompt,
+            )
+            text = response.text
+            break
+        except Exception as e:
+            print(f"Geminiエラー: {e}  retry {i+1}/3")
+            if i == 2:
+                raise
 
-    text = response.text.strip()
-    return text  # Markdownとしてそのまま利用
+    lines = text.strip().split("\n")
+    jp_title = lines[0].strip()
+    body = "\n".join(lines[1:]).strip()
+
+    return jp_title, body
 
 
 # =====================================
 # はてなブログ投稿
 # =====================================
 
-def post_to_hatena(jp_md_text, original_url):
+def post_to_hatena(title, body, original_url):
     print("Posting to Hatena Blog...")
 
-    # Markdownからタイトル抽出（最初の行）
-    first_line = jp_md_text.split("\n")[0]
-    title = first_line.replace("#", "").strip()
+    # XML用にエスケープ
+    esc_title = html.escape(title)
+    esc_body = html.escape(body)
+    esc_link = html.escape(original_url)
 
     updated = datetime.utcnow().isoformat() + "Z"
 
-    # 本文末尾に元URL追記
-    body = jp_md_text + f"\n\n---\n元記事URL: {original_url}\n"
-
-    # AtomPub形式
-    xml = f"""
-<?xml version="1.0" encoding="utf-8"?>
+    xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom">
-  <title>{title}</title>
+  <title>{esc_title}</title>
   <updated>{updated}</updated>
-  <content type="text/markdown">
-{body}
+  <content type="text/plain">
+{esc_body}
+
+元記事URL: {esc_link}
   </content>
 </entry>
 """
@@ -199,15 +204,15 @@ def main():
         print("新記事なし。終了します。")
         return
 
-    # 新記事を1つずつ投稿
-    for a in new_articles:
-        print("Summarizing:", a["title"])
+    # ★ 1件だけ投稿（Gemini429回避 & ブログ安定運用）
+    a = new_articles[0]
 
-        md_text = summarize_with_gemini(a)
+    print("Summarizing:", a["title"])
+    jp_title, jp_body = summarize_with_gemini(a)
 
-        ok = post_to_hatena(md_text, a["link"])
-        if ok:
-            new_seen.add(a["link"])
+    ok = post_to_hatena(jp_title, jp_body, a["link"])
+    if ok:
+        new_seen.add(a["link"])
 
     # seen を更新
     save_seen(new_seen)
