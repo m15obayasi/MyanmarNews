@@ -1,16 +1,16 @@
-name: Run Irrawaddy Digest
+name: Daily Myanmar News Digest
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # 日本時間9:00 (UTC 0:00)
-  workflow_dispatch:
+    - cron: "0 0 * * *"   # 毎日 09:00 JST（0:00 UTC）
+  workflow_dispatch:       # 手動実行も可能
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -20,18 +20,21 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests beautifulsoup4 openai feedparser
+          pip install requests beautifulsoup4 feedparser google-genai
 
       - name: Run script
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           HATENA_ID: ${{ secrets.HATENA_ID }}
           HATENA_API_KEY: ${{ secrets.HATENA_API_KEY }}
           HATENA_BLOG_ID: ${{ secrets.HATENA_BLOG_ID }}
-        run: python main.py
+        run: |
+          python main.py
 
-      - name: Save seen_articles
+      - name: Save seen_articles.json
         uses: EndBug/add-and-commit@v9
         with:
+          author_name: github-actions
+          author_email: actions@github.com
+          message: "Update seen_articles.json"
           add: "seen_articles.json"
-          message: "Update seen articles"
