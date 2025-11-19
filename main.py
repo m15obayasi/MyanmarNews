@@ -3,31 +3,19 @@ import json
 import requests
 import feedparser
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone, timedelta
 from google import genai
-from google.genai import types
-
-# ==============================
-# RSS Sources (B案: Irrawaddyのみ)
-# ==============================
-RSS_SOURCES = [
-    ("Irrawaddy", "https://www.irrawaddy.com/feed"),
-]
+import markdown
 
 SEEN_FILE = "seen_articles.json"
 
-
-# ==============================
-# Load / Save seen articles
-# ==============================
+# --------------------------------------------------
+# 読み込んだ記事ID管理
+# --------------------------------------------------
 def load_seen():
-    if not os.path.exists(SEEN_FILE):
-        return set()
-    try:
+    if os.path.exists(SEEN_FILE):
         with open(SEEN_FILE, "r", encoding="utf-8") as f:
             return set(json.load(f))
-    except:
-        return set()
+    return set()
 
 
 def save_seen(seen):
@@ -35,124 +23,96 @@ def save_seen(seen):
         json.dump(list(seen), f, ensure_ascii=False, indent=2)
 
 
-# ==============================
-# Fetch RSS
-# ==============================
-def fetch_rss():
-    articles = []
-    for name, url in RSS_SOURCES:
-        print(f"Fetching RSS: {name} ...")
-        try:
-            feed = feedparser.parse(url)
-            for e in feed.entries:
-                title = e.get("title", "").strip()
-                link = e.get("link", "").strip()
-                summary = BeautifulSoup(e.get("summary", ""), "lxml").get_text(" ", strip=True)
-                published = e.get("published", "")
-                articles.append({
-                    "source": name,
-                    "title": title,
-                    "link": link,
-                    "summary": summary,
-                    "published": published,
-                })
-        except Exception as e:
-            print(f"RSS取得失敗（{name}）:", e)
-
-    return articles
+# --------------------------------------------------
+# RSSを取得
+# --------------------------------------------------
+def fetch_rss(url, name):
+    print(f"Fetching RSS: {name} ...")
+    feed = feedparser.parse(url)
+    if feed.bozo:
+        print(f"RSS取得失敗（{name}）:", feed.bozo_exception)
+        return []
+    return feed.entries
 
 
-# ==============================
-# Gemini Summary Generator
-# ==============================
-def summarize_with_gemini(article):
+# --------------------------------------------------
+# Geminiで記事生成
+# --------------------------------------------------
+def generate_markdown(article):
+    print("Generating article with Gemini AI...")
+
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
+    # Gemini が余計な翻訳案などを絶対に書かないよう強めの制約
     prompt = f"""
-次の記事について、日本語で以下の構成を守ってブログ記事用のMarkdownを生成してください。
+【重要】
+以下の形式以外は一切出力しないでください。
+「翻訳案」「候補案」「注意書き」「解説」「補足」「他の形式」は絶対に書かないでください。
 
-【生成ルール】
-- 必ず **Markdown形式**（# 見出し、## 小見出し、箇条書き）を使う
-- 「概要 → 背景 → 今後の見通し」の3セクションを必ず作る
-- ニュースの重要性・地域情勢・国際関係なども補足して文章量を増やす
-- 語尾は「です／ます」で統一する
-- 段落の間には必ず空行を入れる
-- Markdown を壊さないようにする
-- 最後に **元記事URL** を掲載する
+必ず次の Markdown 構造のみで出力してください：
 
-【対象記事】
-タイトル: {article["title"]}
-URL: {article["link"]}
-概要: {article["summary"]}
+# 日本語タイトル
 
-それでは Markdown を生成してください。
-"""
+## 概要
+（要約と重要ポイント）
 
-    res = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=[prompt],
-        config=types.GenerateContentConfig(
-            max_output_tokens=1500,
-            temperature=0.3,
-        )
-    )
+## 背景
+（時系列・政治状況・地理関係・登場勢力の説明）
 
-    return res.text
+## 今後の見通し
+（今後予測される展開・国際的影響）
+
+元記事URL: {article["link"]}
 
 
-# ==============================
-# Generate Japanese title
-# ==============================
-def generate_japanese_title(article):
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-
-    prompt = f"""
-次のニュース記事タイトルを、日本語で自然なニュース記事タイトルに翻訳してください。
-
-元のタイトル:
+--- 記事情報 ---
+英語タイトル:
 {article["title"]}
 
-条件:
-- 不自然な直訳にしない
-- 報道記事として自然な文体にする
-- 30〜60字程度
+概要:
+{article["summary"]}
+
+本文（英語の抜粋・サマリ）:
+{article["content"]}
+
+以上を踏まえて、日本語で記事を生成してください。
 """
 
-    res = client.models.generate_content(
+    response = client.models.generate_content(
         model="gemini-2.0-flash",
-        contents=[prompt],
-        config=types.GenerateContentConfig(
-            max_output_tokens=100,
-            temperature=0.2,
-        )
+        contents=prompt
     )
 
-    return res.text.strip()
+    return response.text
 
 
-# ==============================
-# Post to Hatena Blog
-# ==============================
+# --------------------------------------------------
+# はてなブログへ投稿（Markdown→HTML変換つき）
+# --------------------------------------------------
 def post_to_hatena(title, content_md):
     hatena_id = os.environ["HATENA_ID"]
     api_key = os.environ["HATENA_API_KEY"]
     blog_id = os.environ["HATENA_BLOG_ID"]
+
+    # Markdown → HTML変換
+    content_html = markdown.markdown(content_md, extensions=["extra"])
 
     url = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
 
     xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom"
        xmlns:app="http://www.w3.org/2007/app">
+
   <title>{title}</title>
-  <content type="text/markdown">
-{content_md}
+
+  <content type="text/html">
+{content_html}
   </content>
+
 </entry>
 """
 
-    headers = {
-        "Content-Type": "application/xml",
-    }
+    headers = {"Content-Type": "application/xml"}
 
     print("Posting to Hatena Blog...")
 
@@ -165,38 +125,64 @@ def post_to_hatena(title, content_md):
     return True
 
 
-# ==============================
-# Main
-# ==============================
+# --------------------------------------------------
+# メイン処理
+# --------------------------------------------------
 def main():
     print("==== Myanmar News Auto Poster ====")
 
     seen = load_seen()
-    articles = fetch_rss()
 
-    print(f"取得件数: {len(articles)}")
+    # 対象RSS
+    RSS_SOURCES = [
+        ("Irrawaddy", "https://www.irrawaddy.com/feed"),
+        # Myanmar Now は 403 出るので後で代理サーバーを挟む対策が必要
+    ]
 
-    new_articles = [a for a in articles if a["link"] not in seen]
+    new_articles = []
 
-    print(f"新規記事: {len(new_articles)}")
+    for name, url in RSS_SOURCES:
+        entries = fetch_rss(url, name)
+        print("取得件数:", len(entries))
+
+        for e in entries:
+            link = e.get("link")
+            if not link or link in seen:
+                continue
+
+            summary = BeautifulSoup(e.get("summary", ""), "html.parser").get_text()
+            content = e.get("content", [{"value": summary}])[0]["value"]
+
+            new_articles.append({
+                "id": link,
+                "title": e.get("title", ""),
+                "summary": summary,
+                "content": BeautifulSoup(content, "html.parser").get_text(),
+                "link": link
+            })
+
+    print("新規記事:", len(new_articles))
 
     if not new_articles:
         print("新記事なし。終了します。")
         return
 
-    for a in new_articles:
-        print(f"\nSummarizing: {a['title']}")
+    for article in new_articles:
+        md = generate_markdown(article)
 
-        jp_title = generate_japanese_title(a)
-        md_text = summarize_with_gemini(a)
+        # Markdown の最初の行をタイトルにする
+        lines = md.split("\n")
+        safe_title = lines[0].replace("#", "").strip()
 
-        # 投稿
-        post_to_hatena(jp_title, md_text)
+        print("投稿タイトル:", safe_title)
 
-        # 記録
-        seen.add(a["link"])
-        save_seen(seen)
+        ok = post_to_hatena(safe_title, md)
+
+        if ok:
+            seen.add(article["id"])
+            save_seen(seen)
 
 
+# --------------------------------------------------
 if __name__ == "__main__":
     main()
