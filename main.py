@@ -26,28 +26,46 @@ def save_seen(seen):
 
 
 # --------------------------------------------------
-# RSS 取得（Irrawaddy の壊れた XML を強制修正する版）
+# RSS 取得
 # --------------------------------------------------
 def fetch_rss(url, name):
     print(f"Fetching RSS: {name} ...")
-
-    try:
-        r = requests.get(url, timeout=10)
-        raw = r.text
-    except Exception as e:
-        print(f"RSS取得失敗: {e}")
-        return []
-
-    # ★ Irrawaddy の壊れた encoding 宣言を強制修正
-    raw = raw.replace('encoding="us-ascii"', 'encoding="utf-8"')
-    raw = raw.replace("<?xml version='1.0'?>", "<?xml version='1.0' encoding='utf-8'?>")
-
-    feed = feedparser.parse(raw)
-
+    feed = feedparser.parse(url)
     if feed.bozo:
-        print(f"警告（{name}）:", feed.bozo_exception)
+        print(f"RSS取得失敗（{name}）:", feed.bozo_exception)
+        return []
+    return feed.entries
 
-    return feed.entries or []
+
+# --------------------------------------------------
+# 英語タイトル → 日本語ニュース見出しに最適翻訳
+# --------------------------------------------------
+def translate_title_to_japanese(english_title):
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+
+    prompt = f"""
+以下の英語ニュースタイトルを、日本語ニュース見出し独特の語順に最適化して翻訳してください。
+
+【厳守ルール】
+- 出力は日本語タイトル「1行のみ」
+- 説明文・翻訳案・理由付け・補足は禁止
+- 主語 → 動詞 → 対象 の日本語報道語順に整形
+- 文末に句点「。」は付けない
+- カタカナ固有名詞は自然な形へ
+- 冗長表現は適度に省く
+
+英語タイトル:
+{english_title}
+"""
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
+
+    title = response.text.strip()
+    title = title.split("\n")[0].strip()
+    return title
 
 
 # --------------------------------------------------
@@ -59,28 +77,33 @@ def generate_markdown(article):
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = f"""
-# 以下の形式で日本語の記事を生成してください。
+以下のニュース内容を基に、Markdown の記事本文を生成してください。
 
-## ルール
-- 「概要」「背景」「今後の見通し」または「推測」を必ず使う
-- タイトルは本文に含めない
-- 本文の最初に **元記事URL を置く**
-- 不要な注意書き・翻訳案は絶対に書かない
+【絶対ルール】
+- タイトルは本文に書かない（はてなブログの title と重複するため）
+- 見出しは「概要」「背景」「今後の見通し」「推測」のいずれか
+- 「翻訳案」「候補案」「補足」「注意書き」禁止
+- 余計な文章を一切書かない
+- 文中の英語タイトルは使わない（内容のみ参照）
+- 見出しの順序は固定（概要 → 背景 → 今後の見通し or 推測）
+- 見出しが空欄の場合：
+    - 背景が書けない → 空欄のままでOK
+    - 今後の見通しが書けない → 「推測」見出しを出す（内容を書く）
 
-## 出力フォーマット
+【出力フォーマット（Markdown）】
 元記事URL: {article["link"]}
 
 ## 概要
-（要約）
+（日本語で5〜10行）
 
 ## 背景
-（背景。情報が無ければ空白で良い）
+（必要なら記載。無い場合は空欄のまま）
 
 ## 今後の見通し
-（予測が難しい場合はこの見出し自体を出さず、次の「推測」を出す）
+（予測可能な場合のみ記載）
 
 ## 推測
-（このニュースが与える可能性のある影響）
+（見通しを書けない場合はこちらに、今後あり得る影響を記述）
 
 --- 元記事情報 ---
 英語タイトル:
@@ -98,25 +121,17 @@ def generate_markdown(article):
         contents=prompt
     )
 
-    text = response.text
+    text = response.text.strip()
 
-    # --------------------------------------------------
-    # ① もし Gemini がタイトルを勝手に出したら削除
-    # --------------------------------------------------
-    lines = text.split("\n")
-    if lines[0].startswith("#"):
-        lines = lines[1:]
-    text = "\n".join(lines).lstrip()
+    # タイトル行が勝手に出たら除去
+    if text.startswith("#"):
+        text = "\n".join(text.split("\n")[1:]).lstrip()
 
-    # --------------------------------------------------
-    # ② 連続空行を 1つに圧縮
-    # --------------------------------------------------
+    # 連続空行を整形
     text = re.sub(r"\n{3,}", "\n\n", text)
 
-    # --------------------------------------------------
-    # ③ 見出し前のスペース整形
-    # --------------------------------------------------
-    text = re.sub(r"\n+\s*##", "\n\n##", text)
+    # 見出し前は必ず 1 行空ける
+    text = re.sub(r"\n+##", r"\n\n##", text)
 
     return text
 
@@ -138,14 +153,13 @@ def post_to_hatena(title, content_md):
        xmlns:app="http://www.w3.org/2007/app">
 
   <title>{title}</title>
+
   <content type="text/html">
 {content_html}
   </content>
 
 </entry>
 """
-
-    headers = {"Content-Type": "application/xml"}
 
     print("Posting to Hatena Blog...")
     r = requests.post(url, data=xml.encode("utf-8"), auth=(hatena_id, api_key))
@@ -172,6 +186,7 @@ def main():
 
     new_articles = []
 
+    # RSS取得
     for name, url in RSS_SOURCES:
         entries = fetch_rss(url, name)
         print("取得件数:", len(entries))
@@ -182,29 +197,30 @@ def main():
                 continue
 
             summary = BeautifulSoup(e.get("summary", ""), "html.parser").get_text()
-            content = e.get("content", [{"value": summary}])[0]["value"]
+            content_raw = e.get("content", [{"value": summary}])[0]["value"]
+            content = BeautifulSoup(content_raw, "html.parser").get_text()
 
             new_articles.append({
                 "id": link,
-                "title": e.get("title", "").strip(),
+                "title": e.get("title", ""),
                 "summary": summary,
-                "content": BeautifulSoup(content, "html.parser").get_text(),
+                "content": content,
                 "link": link
             })
 
     print("新規記事:", len(new_articles))
-
     if not new_articles:
         print("新記事なし。終了します。")
         return
 
+    # 記事生成＆投稿
     for article in new_articles:
+        jp_title = translate_title_to_japanese(article["title"])
+        print("投稿タイトル:", jp_title)
+
         md = generate_markdown(article)
 
-        # タイトルは英語のまま（翻訳しない方が Google 検索で有利）
-        safe_title = article["title"]
-
-        ok = post_to_hatena(safe_title, md)
+        ok = post_to_hatena(jp_title, md)
 
         if ok:
             seen.add(article["id"])
