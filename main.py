@@ -146,7 +146,7 @@ def get_gemini_model_name() -> str:
         return env_model
 
     # デフォルト（コンソールに表示される model name に合わせて適宜変更）
-    default_model = "gemini-1.5-flash-001"
+    default_model = "gemini-2.5-flash"
     logging.info(f"[INFO] GEMINI_MODEL not set. Using default: {default_model}")
     return default_model
 
