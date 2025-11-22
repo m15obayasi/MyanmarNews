@@ -61,14 +61,13 @@ def fetch_rss_xml(url, source_name):
 
     articles = []
     for item in items:
-        get = lambda xp: item.xpath(xp)[0].text if item.xpath(xp) else ""
-
-        link = get("link").strip()
+        extract = lambda xp: item.xpath(xp)[0].text.strip() if item.xpath(xp) else ""
+        link = extract("link")
         if not link:
             continue
 
-        title = get("title").strip()
-        description = BeautifulSoup(get("description") or "", "html.parser").get_text().strip()
+        title = extract("title")
+        description = BeautifulSoup(extract("description") or "", "html.parser").get_text().strip()
 
         articles.append({
             "source": source_name,
@@ -90,13 +89,13 @@ def generate_jp_title(raw_title):
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = f"""
-次の英語ニュースタイトルを「日本語の自然なニュースタイトル」へ翻訳してください。
+次の英語ニュースタイトルを「日本語の自然なニュースタイトル」に翻訳して下さい。
 
-【必須条件】
-- 日本の報道記事の語順にする
+【条件】
+- 日本のニュース記事の語順にする
 - 30文字以内
-- 「タイトル案」「翻訳結果」などの余計な言葉を一切書かない
-- 出力はタイトル1行のみ
+- 1行のみ出力
+- タイトル案など余計な語句は絶対に書かない
 
 英語タイトル：
 {raw_title}
@@ -104,10 +103,10 @@ def generate_jp_title(raw_title):
 
     res = client.models.generate_content(model=MODEL, contents=prompt).text
 
-    # ---- 最初の行だけを抽出して整形 ----
+    # 最初の1行だけ
     line = res.splitlines()[0].strip()
 
-    # 変な記号除去（AI がつけてしまうことがある）
+    # 不要記号除去
     line = re.sub(r"^[\-\•\*【「『(（\s]+", "", line)
     line = re.sub(r"[」』】)）\s]+$", "", line)
 
@@ -122,93 +121,89 @@ def generate_body(article):
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = f"""
-あなたは日本語の報道記者です。
-必ず以下の Markdown フォーマットだけを出力してください。
-
-（注意）
-- 絶対にタイトルを書かない
-- タイトル案なども禁止
-- 指示文を出力しない
+あなたは日本語ニュース記者です。
+Markdown形式で以下の構成を厳守して本文だけを書いてください。
 
 == 出力フォーマット ==
-
 元記事URL: {article["link"]}
 
 ## 概要
-（ニュースの要点を4〜6文）
+（要点を4〜6文）
 
 ## 背景
-（政治状況、地理、関係勢力を整理）
+（政治状況・関係勢力など）
 
 ## 今後の見通し
-（予測が難しい場合は短くても良い）
+（短くても良い）
 
 ## 推測
-（波及効果・国際的影響を論理的に）
+（波及効果・国際的影響）
 
-==============================
+【禁止】
+- タイトルを書かない
+- 指示文を出力しない
+- セクション名を変更しない
 
-【元データ】
 英語タイトル:
 {article["title"]}
 
-概要:
+要約:
 {article["summary"]}
 
 本文:
 {article["content"]}
-
 """
 
     res = client.models.generate_content(model=MODEL, contents=prompt).text
-    return clean_markdown(res)
+    return fix_markdown(res)
 
 
 # ============================
-# Markdown整形（重要）
+# Markdown 正規化（体裁の核）
 # ============================
 
-def clean_markdown(md):
-    # 行頭のスペースを除去
-    md = "\n".join([line.lstrip() for line in md.splitlines()])
+def fix_markdown(md):
+    # 不可視文字除去（ゼロ幅スペースなど）
+    md = re.sub(r"[\u200b\u200c\u200d\uFEFF]", "", md)
 
-    # ## の前後に空行を強制
-    md = re.sub(r"\n*##", r"\n\n##", md)
+    # 全角記号の統一（Markdown崩壊防止）
+    md = md.replace("–", "-").replace("—", "-")
 
-    # 「##概要」→「## 概要」
-    md = re.sub(r"##\s*", "## ", md)
-
-    # 連続改行を2つまで
-    md = re.sub(r"\n{3,}", "\n\n", md)
-
-    # 最初の行を「元記事URL:」に強制
     lines = md.splitlines()
-    if not lines[0].startswith("元記事URL:"):
-        for i, line in enumerate(lines):
-            if line.startswith("元記事URL:"):
-                lines = [line] + lines[:i] + lines[i+1:]
-                break
-        md = "\n".join(lines)
+    new_lines = []
 
-    return md.strip()
+    for line in lines:
+        # 見出し強制統一
+        if line.strip().startswith("##"):
+            # ##概要 → <h2>概要</h2>
+            title = line.replace("##", "").strip()
+            new_lines.append(f"<h2>{title}</h2>")
+        else:
+            new_lines.append(line.strip())
+
+    cleaned = "\n".join(new_lines)
+
+    # 空行は <br> に変換
+    cleaned = cleaned.replace("\n\n", "<br><br>")
+
+    return cleaned.strip()
 
 
 # ============================
 # はてなブログ投稿
 # ============================
 
-def post_hatena(title, md):
+def post_hatena(title, html_body):
     hatena_id = os.environ["HATENA_ID"]
     api_key = os.environ["HATENA_API_KEY"]
     blog_id = os.environ["HATENA_BLOG_ID"]
 
-    html = markdown.markdown(md, extensions=["extra"])
-
+    # Markdown ではなく、すでに最終 HTML を渡す
     xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom">
   <title>{title}</title>
   <content type="text/html">
-{html}
+{html_body}
   </content>
 </entry>"""
 
@@ -224,13 +219,13 @@ def post_hatena(title, md):
     if r.status_code in [200, 201]:
         print("投稿成功")
         return True
-    else:
-        print("投稿失敗:", r.status_code, r.text)
-        return False
+
+    print("投稿失敗:", r.status_code, r.text)
+    return False
 
 
 # ============================
-# メイン
+# メイン処理
 # ============================
 
 def main():
@@ -247,18 +242,18 @@ def main():
     print("新規記事:", len(fresh))
 
     if not fresh:
-        print("終了")
+        print("新記事なし。終了します。")
         return
 
     for a in fresh:
-        print("\n=== タイトル生成 ===")
+        print("=== タイトル生成 ===")
         jp_title = generate_jp_title(a["title"])
         print("→", jp_title)
 
         print("=== 本文生成 ===")
-        md_body = generate_body(a)
+        html_body = generate_body(a)
 
-        ok = post_hatena(jp_title, md_body)
+        ok = post_hatena(jp_title, html_body)
         if ok:
             new_seen.add(a["link"])
             save_seen(new_seen)
