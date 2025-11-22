@@ -31,6 +31,7 @@ jobs:
       - name: Run script
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-1.5-flash-001      # ★ 追加：v1対応のモデル名
           HATENA_ID: ${{ secrets.HATENA_ID }}
           HATENA_API_KEY: ${{ secrets.HATENA_API_KEY }}
           HATENA_BLOG_ID: ${{ secrets.HATENA_BLOG_ID }}
@@ -44,3 +45,5 @@ jobs:
           author_email: actions@github.com
           message: "Update seen_articles.json"
           add: "seen_articles.json"
+          pathspec_error_handling: ignore   # ★ ファイルが無くてもエラーにしない
+          push: true                        # ★ main へプッシュ
