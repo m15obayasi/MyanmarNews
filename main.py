@@ -9,20 +9,18 @@ import re
 
 SEEN_FILE = "seen_articles.json"
 
+
 # --------------------------------------------------
 # seen_articles.json の読み込み/保存
 # --------------------------------------------------
 def load_seen():
-    # 初回実行対策として空ファイルを生成
-    if not os.path.exists(SEEN_FILE):
-        with open(SEEN_FILE, "w", encoding="utf-8") as f:
-            json.dump([], f)
-
-    try:
-        with open(SEEN_FILE, "r", encoding="utf-8") as f:
-            return set(json.load(f))
-    except Exception:
-        return set()
+    if os.path.exists(SEEN_FILE):
+        try:
+            with open(SEEN_FILE, "r", encoding="utf-8") as f:
+                return set(json.load(f))
+        except:
+            return set()
+    return set()
 
 
 def save_seen(seen):
@@ -31,102 +29,101 @@ def save_seen(seen):
 
 
 # --------------------------------------------------
-# RSS 取得（UTF-8 強制）
+# RSS 取得
 # --------------------------------------------------
 def fetch_rss(url, name):
     print(f"Fetching RSS: {name} ...")
-
-    try:
-        r = requests.get(url, timeout=10)
-        r.encoding = "utf-8"  # 強制 UTF-8
-        xml_text = r.text
-        feed = feedparser.parse(xml_text)
-    except Exception as e:
-        print(f"RSS取得失敗（{name}）:", e)
-        return []
+    feed = feedparser.parse(url)
 
     if feed.bozo:
-        print(f"RSS解析エラー（{name}）:", feed.bozo_exception)
-        # 解析エラーでも entries があれば使う
-        return feed.entries or []
+        print(f"RSS取得失敗（{name}）:", feed.bozo_exception)
+        return []
 
     return feed.entries
 
 
 # --------------------------------------------------
-# Gemini で Markdown 記事生成
+# Gemini タイトル生成 + 本文生成
 # --------------------------------------------------
-def generate_markdown(article):
+def generate_article(article):
     print("Generating article with Gemini AI...")
 
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = f"""
-以下のルールに従って記事本文のみを生成してください。
+以下の2つを JSON で返してください。
 
-【禁止事項】
-- タイトルは絶対に書かない
-- 翻訳案・候補案・警告文・補足説明は禁止
-- 指示文を繰り返すのは禁止
+1. "title": 日本語タイトル（記事内容を正確に要約。短め）
+2. "body": 以下のMarkdown形式で本文。タイトルは本文に含めない。
 
-【見出し構造】
-元記事URL: {article["link"]}
+# 必ず守る形式
 
 ## 概要
-（ニュースの要約）
+（ニュースの要点）
 
 ## 背景
-（背景が不明なら空欄でよい）
+（背景説明。書けない場合は空欄）
 
 ## 今後の見通し
-（予測不能なら何も書かない）
+（予測不能な場合は出力しない）
 
 ## 推測
-（背景または今後の見通しが空欄の場合、このニュースが社会へ与える影響を推測）
+（背景や見通しが書けない場合、必須で記述）
+
+# 注意
+- 「翻訳案」「警告」など余計な文を絶対に入れない
+- 指示文をそのまま本文に書かない
+- JSON のみ返す（Markdown を JSON の body に入れる）
 
 --- 元記事情報 ---
-英語タイトル:
-{article["title"]}
-
-概要:
-{article["summary"]}
-
-本文（英語抜粋）:
-{article["content"]}
+英語タイトル: {article["title"]}
+概要: {article["summary"]}
+本文抜粋: {article["content"]}
 """
 
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt
     )
-    text = response.text
 
-    # タイトル行（Gemini が勝手に書いた場合）を削除
-    lines = text.split("\n")
-    if lines[0].startswith("#"):
-        lines = lines[1:]
-    text = "\n".join(lines).lstrip()
+    # Gemini の返す JSON を確実にパース
+    try:
+        data = json.loads(response.text)
+    except:
+        print("JSONパース失敗。Gemini出力を表示:")
+        print(response.text)
+        raise
 
-    # 改行整形
-    text = re.sub(r"\n{3,}", "\n\n", text)
+    title = data["title"]
+    body = data["body"]
 
-    return text
+    # ---- 整形 ----
+
+    # 連続空行の削除
+    body = re.sub(r"\n{3,}", "\n\n", body)
+
+    # 見出しの手前後の余白整理
+    body = re.sub(r"\n+\s*##", "\n\n##", body)
+
+    # 先頭に元記事URLを追加
+    final_md = f"元記事URL: {article['link']}\n\n{body}"
+
+    return title, final_md
 
 
 # --------------------------------------------------
-# はてなブログ投稿（Markdown → HTML + CDATA）
+# Hatena Blog 投稿
 # --------------------------------------------------
 def post_to_hatena(title, content_md):
     hatena_id = os.environ["HATENA_ID"]
     api_key = os.environ["HATENA_API_KEY"]
     blog_id = os.environ["HATENA_BLOG_ID"]
 
-    # Markdown → HTML
-    content_html = markdown.markdown(content_md, extensions=["extra"])
-    content_html = BeautifulSoup(content_html, "html.parser").prettify()
-
-    # CDATA 化（HTML 崩壊防止）
-    content_html_cdata = f"<![CDATA[\n{content_html}\n]]>"
+    # Markdown → HTML（壊れにくい設定）
+    content_html = markdown.markdown(
+        content_md,
+        extensions=["extra", "sane_lists"]
+    )
 
     url = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
 
@@ -137,15 +134,14 @@ def post_to_hatena(title, content_md):
   <title>{title}</title>
 
   <content type="text/html">
-{content_html_cdata}
+{content_html}
   </content>
 
 </entry>
 """
 
-    headers = {"Content-Type": "application/xml"}
-
     print("Posting to Hatena Blog...")
+
     r = requests.post(url, data=xml.encode("utf-8"), auth=(hatena_id, api_key))
 
     if r.status_code not in [200, 201]:
@@ -182,11 +178,14 @@ def main():
             summary = BeautifulSoup(e.get("summary", ""), "html.parser").get_text()
             content = e.get("content", [{"value": summary}])[0]["value"]
 
+            # HTML除去
+            clean_content = BeautifulSoup(content, "html.parser").get_text()
+
             new_articles.append({
                 "id": link,
                 "title": e.get("title", ""),
                 "summary": summary,
-                "content": BeautifulSoup(content, "html.parser").get_text(),
+                "content": clean_content,
                 "link": link
             })
 
@@ -197,15 +196,16 @@ def main():
         return
 
     for article in new_articles:
-        md = generate_markdown(article)
-        safe_title = article["title"]
+        # タイトルと本文を生成
+        title, md = generate_article(article)
 
-        ok = post_to_hatena(safe_title, md)
+        ok = post_to_hatena(title, md)
 
         if ok:
             seen.add(article["id"])
             save_seen(seen)
 
 
+# --------------------------------------------------
 if __name__ == "__main__":
     main()
