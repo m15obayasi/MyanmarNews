@@ -1,14 +1,16 @@
 import os
 import json
 import requests
+import feedparser
 from bs4 import BeautifulSoup
 from google import genai
 import markdown
 
 SEEN_FILE = "seen_articles.json"
 
+
 # --------------------------------------------------
-# seen_articles.json の読み書き
+# 既存記事ID管理
 # --------------------------------------------------
 def load_seen():
     if os.path.exists(SEEN_FILE):
@@ -16,79 +18,65 @@ def load_seen():
             return set(json.load(f))
     return set()
 
+
 def save_seen(seen):
     with open(SEEN_FILE, "w", encoding="utf-8") as f:
         json.dump(list(seen), f, ensure_ascii=False, indent=2)
 
+
 # --------------------------------------------------
-# RSSを requests + BeautifulSoup で安全に取得（Irrawaddy対応）
+# RSS取得（Irrawaddyの文字コード問題に対応）
 # --------------------------------------------------
 def fetch_rss(url, name):
     print(f"Fetching RSS: {name} ...")
 
     try:
-        res = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
-        res.raise_for_status()
+        # まず requests で強制UTF-8として取得
+        res = requests.get(url, timeout=20)
+        text = res.content.decode("utf-8", errors="ignore")
+        feed = feedparser.parse(text)
     except Exception as e:
         print(f"RSS取得失敗（{name}）:", e)
         return []
 
-    # Irrawaddy は XML 内に encoding が書かれておらず US-ASCII 扱い → 強制UTF-8で読み直す
-    text = res.content.decode("utf-8", errors="ignore")
-    soup = BeautifulSoup(text, "xml")
+    if feed.bozo:
+        print(f"RSS取得失敗（{name}）:", feed.bozo_exception)
+        return []
 
-    items = soup.find_all("item")
-    articles = []
-
-    for item in items:
-        title = item.title.get_text() if item.title else ""
-        link = item.link.get_text() if item.link else ""
-
-        # description / content:encoded / summary のどれかがある
-        description = ""
-        if item.find("content:encoded"):
-            description = item.find("content:encoded").get_text()
-        elif item.description:
-            description = item.description.get_text()
-        else:
-            description = ""
-
-        clean_summary = BeautifulSoup(description, "html.parser").get_text()
-
-        articles.append({
-            "title": title,
-            "link": link,
-            "summary": clean_summary,
-            "content": clean_summary
-        })
-
-    return articles
+    return feed.entries
 
 
 # --------------------------------------------------
-# Gemini で記事生成（Markdown）—翻訳案禁止をさらに強化
+# Geminiで記事生成
 # --------------------------------------------------
-def generate_markdown(article):
+def generate_markdown(article, need_guess):
     print("Generating article with Gemini AI...")
 
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
+    # 情報不足なら「推測」セクションを使う
+    if need_guess:
+        background_header = "## 推測：このニュースが与える影響"
+        outlook_header = ""
+    else:
+        background_header = "## 背景"
+        outlook_header = "## 今後の見通し"
+
     prompt = f"""
-【絶対遵守事項】
-以下の Markdown フォーマット「のみ」を出力してください。
-他の文章（翻訳案・候補案・注意書き・説明文・補足・別解釈）は一切書かないこと。
-出力は記事本文だけ。
+【絶対遵守】
+次の Markdown 構造 **のみ** を出力してください。
+余計な翻訳案・候補案・注意書き・解説は禁止。
 
 # 日本語タイトル
 
 ## 概要
 （要約と重要ポイント）
 
-## 背景
-（時系列・政治状況・地理関係・登場勢力を整理）
+{background_header}
+（時系列・政治状況・関係勢力の説明、または推測による影響分析）
 
-## 今後の見通し
-（予測される展開・国際的影響・地域リスク）
+{outlook_header}
+（今後予測される展開・国際的影響。推測モードでは空でよい）
 
 元記事URL: {article["link"]}
 
@@ -99,10 +87,8 @@ def generate_markdown(article):
 概要:
 {article["summary"]}
 
-本文（英語の簡易抜粋）:
+本文（英語抜粋・サマリ）:
 {article["content"]}
-
-以上を踏まえ、日本語で記事を Markdown 形式で生成せよ。
 """
 
     response = client.models.generate_content(
@@ -110,30 +96,48 @@ def generate_markdown(article):
         contents=prompt
     )
 
-    return response.text
+    md = response.text
+
+    # 安全策：元記事URLが無い場合は強制付与
+    if "元記事URL" not in md:
+        md += f"\n\n元記事URL: {article['link']}"
+
+    return md
 
 
 # --------------------------------------------------
-# はてなブログ投稿（Markdown → HTML 変換）
+# はてなブログ投稿（Markdown → HTML）
 # --------------------------------------------------
-def post_to_hatena(title, md_text):
+def post_to_hatena(title, content_md):
     hatena_id = os.environ["HATENA_ID"]
     api_key = os.environ["HATENA_API_KEY"]
     blog_id = os.environ["HATENA_BLOG_ID"]
 
-    # Markdown → HTML
-    content_html = markdown.markdown(md_text, extensions=["extra"])
+    # Markdown → HTML（改行と見出しに完全対応）
+    content_html = markdown.markdown(
+        content_md,
+        extensions=["extra", "nl2br", "sane_lists"]
+    )
 
+    # はてなブログ AtomPub
     url = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
 
     xml = f"""<?xml version="1.0" encoding="utf-8"?>
-<entry xmlns="http://www.w3.org/2005/Atom">
+<entry xmlns="http://www.w3.org/2005/Atom"
+       xmlns:app="http://www.w3.org/2007/app">
+
   <title>{title}</title>
+
   <content type="text/html">
+<![CDATA[
 {content_html}
+]]>
   </content>
+
 </entry>
 """
+
+    headers = {"Content-Type": "application/xml"}
 
     print("Posting to Hatena Blog...")
 
@@ -156,7 +160,7 @@ def main():
     seen = load_seen()
 
     RSS_SOURCES = [
-        ("Irrawaddy", "https://www.irrawaddy.com/feed")
+        ("Irrawaddy", "https://www.irrawaddy.com/feed"),
     ]
 
     new_articles = []
@@ -166,11 +170,25 @@ def main():
         print("取得件数:", len(entries))
 
         for e in entries:
-            link = e["link"]
+            link = e.get("link")
             if not link or link in seen:
                 continue
 
-            new_articles.append(e)
+            summary = BeautifulSoup(e.get("summary", ""), "html.parser").get_text()
+            content_raw = e.get("content", [{"value": summary}])[0]["value"]
+            content = BeautifulSoup(content_raw, "html.parser").get_text()
+
+            # 情報不足判定（超簡易ロジック）
+            need_guess = len(content.split()) < 80 or len(summary.split()) < 40
+
+            new_articles.append({
+                "id": link,
+                "title": e.get("title", ""),
+                "summary": summary,
+                "content": content,
+                "link": link,
+                "need_guess": need_guess
+            })
 
     print("新規記事:", len(new_articles))
 
@@ -178,21 +196,23 @@ def main():
         print("新記事なし。終了します。")
         return
 
-    # 新しいものから順に処理
     for article in new_articles:
-        md = generate_markdown(article)
+        md = generate_markdown(article, article["need_guess"])
 
-        # 先頭行をタイトルにする
-        first_line = md.split("\n")[0]
-        safe_title = first_line.replace("#", "").strip()
+        # タイトル行（# ...）を本文から削除
+        lines = md.split("\n")
+        title_line = lines[0].replace("#", "").strip()
+        body_md = "\n".join(lines[1:]).strip()
 
-        print("投稿タイトル:", safe_title)
+        print("投稿タイトル:", title_line)
 
-        ok = post_to_hatena(safe_title, md)
+        ok = post_to_hatena(title_line, body_md)
+
         if ok:
-            seen.add(article["link"])
+            seen.add(article["id"])
             save_seen(seen)
 
 
+# --------------------------------------------------
 if __name__ == "__main__":
     main()
