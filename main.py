@@ -9,9 +9,8 @@ import re
 
 SEEN_FILE = "seen_articles.json"
 
-
 # --------------------------------------------------
-# seen_articles.json の読み込み/保存
+# seen_articles.json 読み込み
 # --------------------------------------------------
 def load_seen():
     if os.path.exists(SEEN_FILE):
@@ -26,11 +25,18 @@ def save_seen(seen):
 
 
 # --------------------------------------------------
-# RSS 取得
+# RSS取得（Irrawaddy は charset 壊れているので UTF-8 に強制変換）
 # --------------------------------------------------
+def fetch_rss_raw(url):
+    """feedparser が壊れるので自前で取得→UTF-8 に張り替え"""
+    r = requests.get(url, timeout=10)
+    r.encoding = "utf-8"  # ここで強制 UTF-8
+    return feedparser.parse(r.text)
+
+
 def fetch_rss(url, name):
     print(f"Fetching RSS: {name} ...")
-    feed = feedparser.parse(url)
+    feed = fetch_rss_raw(url)
     if feed.bozo:
         print(f"RSS取得失敗（{name}）:", feed.bozo_exception)
         return []
@@ -38,94 +44,97 @@ def fetch_rss(url, name):
 
 
 # --------------------------------------------------
-# 英語タイトル → 自然な日本語タイトル
+# 英語タイトル → 自然な日本語ニュースタイトルへ変換
 # --------------------------------------------------
-def generate_jp_title(client, english_title):
-    prompt = f"""
-次の英語ニュースタイトルを、自然で硬派な日本語ニュースタイトルに翻訳してください。
-タイトル以外は絶対に書かないでください。
+def translate_title_to_japanese(eng_title):
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
+    prompt = f"""
+以下の英語ニュースタイトルを、日本語のニュース記事として自然で読みやすいタイトルに変換してください。
+・直訳は避け、意味が伝わる自然な日本語にしてください。
+・句読点と語順を「日本のニュース記事タイトル」風に整えてください。
 英語タイトル:
-{english_title}
+{eng_title}
+日本語タイトル：
 """
+
     res = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt
     )
+
     title = res.text.strip()
-    title = title.replace("#", "").replace("*", "").strip()
+    title = title.replace("日本語タイトル：", "").strip()
+    title = title.split("\n")[0].strip()
     return title
 
 
 # --------------------------------------------------
-# Gemini で Markdown 本文生成
+# Gemini で Markdown 記事生成（レイアウト安定版）
 # --------------------------------------------------
-def generate_markdown(client, article):
-    print("Generating article with Gemini AI...")
+def generate_markdown(article):
+    print("Generating article with Gemini...")
+
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = f"""
-以下の【出力フォーマット】のみで、日本語の記事本文を生成してください。
-絶対にタイトルは本文に含めないでください。
-文章以外の注意書き・翻訳案・候補案は禁止。
+# 以下のフォーマットで日本語ニュース記事を生成してください。
+# 絶対に余計な文章（注意書き・候補案など）を書かないこと。
 
-【出力フォーマット】
 元記事URL: {article["link"]}
 
 ## 概要
-（ニュース要約）
+（要約）
 
 ## 背景
-（背景説明。無ければ空欄でよい）
+（背景説明。無い場合は空欄でOK）
 
 ## 今後の見通し
-（予測可能なら記述。難しい場合は省略して、代わりに下記を出力）
+（予測が難しい場合はこのセクションを出さず、代わりに「## 推測」を使う）
 
 ## 推測
-（このニュースが及ぼす可能性のある影響）
-
+（このニュースが今後もたらす可能性のある影響）
 
 --- 元記事情報 ---
 英語タイトル:
 {article["title"]}
 
-概要:
+概要（RSSの summary）:
 {article["summary"]}
 
-本文の抜粋:
+本文（抜粋）:
 {article["content"]}
+
 """
 
-    response = client.models.generate_content(
+    res = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt
     )
 
-    text = response.text
+    md = res.text
 
-    # タイトル混入を削除
-    lines = text.split("\n")
+    # 余計な先頭の # タイトル削除
+    lines = md.split("\n")
     if lines[0].startswith("#"):
         lines = lines[1:]
-    text = "\n".join(lines).lstrip()
+    md = "\n".join(lines).lstrip()
 
-    # 3行以上の連続改行 → 2行へ
-    text = re.sub(r"\n{3,}", "\n\n", text)
+    # 改行の正規化
+    md = re.sub(r"\n{3,}", "\n\n", md)
+    md = re.sub(r"\n+\s*##", "\n\n##", md)
 
-    # 見出し前に空行確保
-    text = re.sub(r"\n+\s*##", "\n\n##", text)
-
-    return text
+    return md
 
 
 # --------------------------------------------------
-# はてなブログ投稿（Markdown → HTML）
+# Hatenaブログへ投稿
 # --------------------------------------------------
 def post_to_hatena(title, content_md):
     hatena_id = os.environ["HATENA_ID"]
     api_key = os.environ["HATENA_API_KEY"]
     blog_id = os.environ["HATENA_BLOG_ID"]
 
-    # Markdown → HTML
     content_html = markdown.markdown(content_md, extensions=["extra"])
 
     url = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
@@ -142,8 +151,6 @@ def post_to_hatena(title, content_md):
 
 </entry>
 """
-
-    headers = {"Content-Type": "application/xml"}
 
     print("Posting to Hatena Blog...")
     r = requests.post(url, data=xml.encode("utf-8"), auth=(hatena_id, api_key))
@@ -162,7 +169,6 @@ def post_to_hatena(title, content_md):
 def main():
     print("==== Myanmar News Auto Poster ====")
 
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
     seen = load_seen()
 
     RSS_SOURCES = [
@@ -171,7 +177,7 @@ def main():
 
     new_articles = []
 
-    # RSS取得
+    # RSS 取得
     for name, url in RSS_SOURCES:
         entries = fetch_rss(url, name)
         print("取得件数:", len(entries))
@@ -183,12 +189,13 @@ def main():
 
             summary = BeautifulSoup(e.get("summary", ""), "html.parser").get_text()
             content = e.get("content", [{"value": summary}])[0]["value"]
+            content = BeautifulSoup(content, "html.parser").get_text()
 
             new_articles.append({
                 "id": link,
                 "title": e.get("title", ""),
                 "summary": summary,
-                "content": BeautifulSoup(content, "html.parser").get_text(),
+                "content": content,
                 "link": link
             })
 
@@ -198,15 +205,14 @@ def main():
         print("新記事なし。終了します。")
         return
 
-    # 投稿処理
+    # 記事ごとに投稿
     for article in new_articles:
-
         # 日本語タイトル生成
-        jp_title = generate_jp_title(client, article["title"])
-        print("生成タイトル:", jp_title)
+        print("Translating title...")
+        jp_title = translate_title_to_japanese(article["title"])
+        print("日本語タイトル:", jp_title)
 
-        # 本文生成
-        md = generate_markdown(client, article)
+        md = generate_markdown(article)
 
         ok = post_to_hatena(jp_title, md)
 
