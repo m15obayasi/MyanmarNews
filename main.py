@@ -9,15 +9,20 @@ import re
 
 SEEN_FILE = "seen_articles.json"
 
-
 # --------------------------------------------------
 # seen_articles.json の読み込み/保存
 # --------------------------------------------------
 def load_seen():
-    if os.path.exists(SEEN_FILE):
+    # 初回実行対策として空ファイルを生成
+    if not os.path.exists(SEEN_FILE):
+        with open(SEEN_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+
+    try:
         with open(SEEN_FILE, "r", encoding="utf-8") as f:
             return set(json.load(f))
-    return set()
+    except Exception:
+        return set()
 
 
 def save_seen(seen):
@@ -26,14 +31,25 @@ def save_seen(seen):
 
 
 # --------------------------------------------------
-# RSS 取得
+# RSS 取得（UTF-8 強制）
 # --------------------------------------------------
 def fetch_rss(url, name):
     print(f"Fetching RSS: {name} ...")
-    feed = feedparser.parse(url)
-    if feed.bozo:
-        print(f"RSS取得失敗（{name}）:", feed.bozo_exception)
+
+    try:
+        r = requests.get(url, timeout=10)
+        r.encoding = "utf-8"  # 強制 UTF-8
+        xml_text = r.text
+        feed = feedparser.parse(xml_text)
+    except Exception as e:
+        print(f"RSS取得失敗（{name}）:", e)
         return []
+
+    if feed.bozo:
+        print(f"RSS解析エラー（{name}）:", feed.bozo_exception)
+        # 解析エラーでも entries があれば使う
+        return feed.entries or []
+
     return feed.entries
 
 
@@ -46,28 +62,27 @@ def generate_markdown(article):
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = f"""
-# 以下の形式で日本語の記事を生成してください。
+以下のルールに従って記事本文のみを生成してください。
 
-## 必ず守るルール
-- 見出しは「概要」「背景」「今後の見通し」または「推測」のいずれか
-- タイトルは出力しない（本文に含めない）
-- 「翻訳案」「候補案」「警告文」「補足」などは絶対に書かない
-- 余計な説明文は絶対に書かない
+【禁止事項】
+- タイトルは絶対に書かない
+- 翻訳案・候補案・警告文・補足説明は禁止
+- 指示文を繰り返すのは禁止
 
-## 出力フォーマット
+【見出し構造】
 元記事URL: {article["link"]}
 
 ## 概要
-（要約）
+（ニュースの要約）
 
 ## 背景
-（背景説明。無い場合は空白で良い）
+（背景が不明なら空欄でよい）
 
 ## 今後の見通し
-（予測できない場合は省略し、代わりに下記を出力）
+（予測不能なら何も書かない）
 
 ## 推測
-（このニュースが今後与える可能性のある影響）
+（背景または今後の見通しが空欄の場合、このニュースが社会へ与える影響を推測）
 
 --- 元記事情報 ---
 英語タイトル:
@@ -76,9 +91,8 @@ def generate_markdown(article):
 概要:
 {article["summary"]}
 
-本文（英語の抜粋・サマリ）:
+本文（英語抜粋）:
 {article["content"]}
-
 """
 
     response = client.models.generate_content(
@@ -87,28 +101,20 @@ def generate_markdown(article):
     )
     text = response.text
 
-    # --------------------------------------------------
-    # ① もし Gemini がタイトルを勝手に出したら削除
-    # --------------------------------------------------
+    # タイトル行（Gemini が勝手に書いた場合）を削除
     lines = text.split("\n")
     if lines[0].startswith("#"):
         lines = lines[1:]
-
     text = "\n".join(lines).lstrip()
 
-    # --------------------------------------------------
-    # ② 連続する空白行を1つに削減
-    # --------------------------------------------------
+    # 改行整形
     text = re.sub(r"\n{3,}", "\n\n", text)
-
-    # 見出し前後の空白を整形
-    text = re.sub(r"\n+\s*##", "\n\n##", text)
 
     return text
 
 
 # --------------------------------------------------
-# はてなブログ投稿（Markdown → HTML）
+# はてなブログ投稿（Markdown → HTML + CDATA）
 # --------------------------------------------------
 def post_to_hatena(title, content_md):
     hatena_id = os.environ["HATENA_ID"]
@@ -117,6 +123,10 @@ def post_to_hatena(title, content_md):
 
     # Markdown → HTML
     content_html = markdown.markdown(content_md, extensions=["extra"])
+    content_html = BeautifulSoup(content_html, "html.parser").prettify()
+
+    # CDATA 化（HTML 崩壊防止）
+    content_html_cdata = f"<![CDATA[\n{content_html}\n]]>"
 
     url = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
 
@@ -127,7 +137,7 @@ def post_to_hatena(title, content_md):
   <title>{title}</title>
 
   <content type="text/html">
-{content_html}
+{content_html_cdata}
   </content>
 
 </entry>
@@ -147,7 +157,7 @@ def post_to_hatena(title, content_md):
 
 
 # --------------------------------------------------
-# メイン処理
+# メイン
 # --------------------------------------------------
 def main():
     print("==== Myanmar News Auto Poster ====")
@@ -188,8 +198,6 @@ def main():
 
     for article in new_articles:
         md = generate_markdown(article)
-
-        # タイトルは英語タイトルをそのまま翻訳せずに使う
         safe_title = article["title"]
 
         ok = post_to_hatena(safe_title, md)
@@ -199,6 +207,5 @@ def main():
             save_seen(seen)
 
 
-# --------------------------------------------------
 if __name__ == "__main__":
     main()
