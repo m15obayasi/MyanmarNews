@@ -1,29 +1,25 @@
 import os
 import json
-import textwrap
-import datetime
-import feedparser
+import html
+from datetime import datetime
+from typing import Dict, Any, List, Optional, Tuple
+
 import requests
+import feedparser
 from bs4 import BeautifulSoup
-import markdown
-import google.genai as genai
 
-# =========================================================
+from google import genai
+from google.genai.types import HttpOptions
+
+import markdown as md
+from xml.etree.ElementTree import Element, SubElement, tostring
+
+# ============================================================
 # 設定
-# =========================================================
+# ============================================================
 
-# Gemini モデル名は環境変数から取得（404 が出る場合は Actions 側で差し替え）
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
+SEEN_FILE = "seen_articles.json"
 
-# はてなブログ設定（GitHub Actions の env / secrets から渡す想定）
-HATENA_ID = os.environ.get("HATENA_ID")
-HATENA_API_KEY = os.environ.get("HATENA_API_KEY")
-HATENA_BLOG_ID = os.environ.get("HATENA_BLOG_ID")
-
-# 投稿済み記事ID保存用ファイル
-SEEN_ARTICLES_FILE = "seen_articles.json"
-
-# 対象RSSフィード（ミャンマー関連記事の代表サイト）
 RSS_SOURCES = [
     {
         "name": "The Irrawaddy (English)",
@@ -31,328 +27,395 @@ RSS_SOURCES = [
     },
     {
         "name": "Myanmar Now (English)",
-        "url": "https://www.myanmar-now.org/en/feed",
+        "url": "https://myanmar-now.org/en/feed/",
     },
     {
         "name": "Frontier Myanmar (English)",
-        "url": "https://www.frontiermyanmar.net/en/feed",
+        "url": "https://www.frontiermyanmar.net/en/feed/",
     },
 ]
 
-# Gemini クライアント
-client = genai.Client(
-    api_key=os.environ.get("GEMINI_API_KEY")
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
 )
 
-print(f"[INFO] Using Gemini model: {GEMINI_MODEL}")
+
+# ============================================================
+# ちょい便利なログ
+# ============================================================
+
+def info(msg: str) -> None:
+    print(f"[INFO] {msg}")
 
 
-# =========================================================
-# ユーティリティ
-# =========================================================
+def warn(msg: str) -> None:
+    print(f"[WARN] {msg}")
 
-def load_seen_article_ids():
-    """既に投稿済みの記事ID一覧を読み込む"""
-    if not os.path.exists(SEEN_ARTICLES_FILE):
-        print("[INFO] Loaded 0 seen article IDs.")
-        return []
+
+def error(msg: str) -> None:
+    print(f"[ERROR] {msg}")
+
+
+# ============================================================
+# seen_articles.json の管理
+# ============================================================
+
+def load_seen_articles() -> set:
+    """既読記事IDのセットを読み込む。なければ空ファイルを作る。"""
+    if not os.path.exists(SEEN_FILE):
+        info("seen_articles.json not found. Creating new empty file.")
+        with open(SEEN_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f, ensure_ascii=False, indent=2)
+        return set()
 
     try:
-        with open(SEEN_ARTICLES_FILE, "r", encoding="utf-8") as f:
+        with open(SEEN_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-        if isinstance(data, list):
-            print(f"[INFO] Loaded {len(data)} seen article IDs.")
-            return data
-        else:
-            print("[WARN] seen_articles.json format invalid, resetting.")
-            return []
+        seen = set(data)
+        info(f"Loaded {len(seen)} seen article IDs.")
+        return seen
     except Exception as e:
-        print("[WARN] Failed to load seen_articles.json:", e)
-        return []
+        error(f"Failed to load {SEEN_FILE}: {e}")
+        return set()
 
 
-def save_seen_article_ids(ids):
-    """投稿済みの記事ID一覧を保存"""
+def save_seen_articles(seen_ids: set) -> None:
+    """既読記事IDセットを JSON ファイルに保存する。"""
     try:
-        with open(SEEN_ARTICLES_FILE, "w", encoding="utf-8") as f:
-            json.dump(ids, f, ensure_ascii=False, indent=2)
-        print(f"[INFO] Saved {len(ids)} seen article IDs.")
+        with open(SEEN_FILE, "w", encoding="utf-8") as f:
+            json.dump(sorted(list(seen_ids)), f, ensure_ascii=False, indent=2)
+        info(f"Saved {len(seen_ids)} seen article IDs.")
     except Exception as e:
-        print("[ERROR] Failed to save seen_articles.json:", e)
+        error(f"Failed to save {SEEN_FILE}: {e}")
 
 
-def fetch_rss_entries(url: str):
-    """RSSフィードから記事一覧を取得"""
-    d = feedparser.parse(url)
-    entries = d.entries or []
-    return entries
+# ============================================================
+# RSS から新しい記事を 1 本だけ選ぶ
+# ============================================================
 
-
-def pick_new_article(entries, seen_ids):
+def choose_new_article(seen_ids: set) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]], Optional[str]]:
     """
-    まだ投稿していない記事を1件選ぶ。
-    記事IDは entry.id があればそれを、なければ link を使う。
+    RSS_SOURCES を上から順に見て、未読の記事を 1 件だけ返す。
+    戻り値: (entry, source, article_id) / 見つからなければ (None, None, None)
     """
-    for entry in entries:
-        article_id = getattr(entry, "id", None) or getattr(entry, "link", None)
-        if not article_id:
-            continue
-        if article_id not in seen_ids:
-            return entry, article_id
-    return None, None
+    for src in RSS_SOURCES:
+        name = src["name"]
+        url = src["url"]
+        info(f"Checking RSS source: {name} ({url})")
+
+        feed = feedparser.parse(url)
+        entries = feed.entries or []
+        info(f"RSS fetched: {url} / entries = {len(entries)}")
+
+        for entry in entries:
+            article_id = entry.get("id") or entry.get("link")
+            if not article_id:
+                continue
+            if article_id in seen_ids:
+                continue
+
+            title = entry.get("title", "(no title)")
+            info(f"Selected new article from {name}: {title}")
+            return entry, src, article_id
+
+    info("No new article found in any RSS source.")
+    return None, None, None
 
 
-def fetch_full_article_content(url: str) -> str:
-    """
-    元記事URLから本文をできるだけ多く取得する。
-    失敗した場合は空文字を返す。
-    """
+# ============================================================
+# 元記事本文の取得
+# ============================================================
+
+def fetch_article_content(url: str) -> Optional[str]:
+    """元記事 URL から本文テキストを取ってくる（失敗したら None）。"""
     try:
-        resp = requests.get(url, timeout=10)
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=20)
         resp.raise_for_status()
     except Exception as e:
-        print("[WARN] Failed to fetch article content:", e)
-        return ""
-
-    soup = BeautifulSoup(resp.text, "lxml")
-
-    # よくある記事コンテナを優先して拾う
-    candidates = []
-    if soup.find("article"):
-        candidates.append(soup.find("article"))
-    if soup.find("main"):
-        candidates.append(soup.find("main"))
-    candidates.append(soup.body)
-
-    text = ""
-    for c in candidates:
-        if not c:
-            continue
-        # 不要なタグを削除
-        for tag in c.find_all(["script", "style", "nav", "footer", "header", "form"]):
-            tag.decompose()
-        t = c.get_text(separator="\n")
-        t = "\n".join(line.strip() for line in t.splitlines() if line.strip())
-        if len(t) > len(text):
-            text = t
-
-    # 長すぎる場合は適度にカット（プロンプト過大防止）
-    max_chars = 8000
-    if len(text) > max_chars:
-        text = text[:max_chars]
-
-    return text.strip()
-
-
-def generate_article_with_gemini(source_name, article_title, article_url, article_content):
-    """
-    英語記事をもとに、日本語の「要約＋再構成」記事を Gemini で生成する。
-    戻り値は Markdown 文字列（失敗時は None）。
-    """
-    if not article_content:
-        # コンテンツが取れていない場合は、summary などを親側で渡してくる前提
-        print("[WARN] Article content is empty. Using fallback text in prompt.")
-
-    prompt = f"""
-あなたはミャンマー政治・経済の専門ニュース編集者です。
-
-### タスク
-以下の英語ニュース記事を読み、その内容をもとに **日本語の記事** を作成してください。
-
-- テーマ: ミャンマー情勢（政治・経済・社会全般）
-- 想定読者: 日本の一般読者（ミャンマー情勢に関心はあるが専門家ではない）
-- 記事構成:
-  1. 冒頭で「この記事の主題」を 2〜3文で端的に説明
-  2. 重要な事実・数字・関係者・地名などを整理してわかりやすく説明
-  3. 背景や文脈（なぜ重要なのか）を簡潔に補足
-  4. 今後の見通しや影響があれば触れる
-
-### 文章スタイル
-- 日本語: 「です・ます調」
-- 分量: 1,000〜1,500文字程度を目安
-- 固有名詞（人名・地名・組織名）はできるだけ維持しつつ、カタカナ表記や補足説明を入れてください。
-- 陰謀論や推測は書かず、元記事の事実関係に忠実に。
-
-### 出力フォーマット（Markdown）
-- 1つの H1 見出し（記事タイトル）
-- 複数の H2 / H3 見出しで記事を構成
-- 箇条書きが適切な箇所では bullet list を使う
-- 最後に「元記事: {article_url}」と記載
-
-### 英語元記事（{source_name}）
-タイトル: {article_title}
-
-本文:
-{article_content}
-    """.strip()
-
-    try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[
-                {
-                    "role": "user",
-                    "parts": [{"text": prompt}],
-                }
-            ],
-        )
-        # google-genai のレスポンスは response.text に Markdown 全文が入る
-        return response.text
-    except Exception as e:
-        print("[ERROR] Gemini article generation failed:", e)
+        warn(f"Failed to fetch article content: {e}")
         return None
 
+    html_text = resp.text
+    soup = BeautifulSoup(html_text, "lxml")
 
-def escape_xml(text: str) -> str:
-    """Atom投稿用に最低限のXMLエスケープを行う"""
-    if text is None:
-        return ""
-    return (
-        text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
+    # よくある記事コンテナを順に探す
+    candidates = [
+        {"name": "article"},
+        {"name": "div", "attrs": {"class": lambda c: c and "article" in c}},
+        {"name": "div", "attrs": {"class": lambda c: c and "post-content" in c}},
+        {"name": "div", "attrs": {"id": "content"}},
+    ]
+
+    for cond in candidates:
+        node = soup.find(cond.get("name"), attrs=cond.get("attrs"))
+        if node:
+            text = node.get_text(separator="\n", strip=True)
+            if text:
+                return text
+
+    # フォールバック: 全文から script/style を除いてテキスト抽出
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+    text = soup.get_text(separator="\n", strip=True)
+    return text or None
+
+
+# ============================================================
+# Gemini 用プロンプト生成
+# ============================================================
+
+def build_gemini_prompt(entry: Dict[str, Any], article_text: Optional[str], source_name: str) -> str:
+    title = entry.get("title", "")
+    link = entry.get("link", "")
+    published = entry.get("published", "") or entry.get("updated", "")
+
+    base_text_parts: List[str] = []
+
+    if article_text:
+        base_text_parts.append(article_text)
+    else:
+        # 本文取得に失敗した場合は RSS の要約・説明などで代用
+        summary = entry.get("summary", "") or entry.get("description", "")
+        base_text_parts.append(summary or "")
+
+    base_text = "\n\n".join(part for part in base_text_parts if part)
+
+    prompt = f"""
+You are a professional Japanese journalist writing for a blog about Myanmar.
+
+Write a single Japanese blog article based on the following English news article
+about Myanmar. Your tasks:
+
+1. Summarize the key points accurately.
+2. Translate into natural Japanese.
+3. Add context that helps Japanese readers understand Myanmar's situation.
+4. Do NOT invent facts.
+5. Make the tone neutral but easy to read.
+6. Do not include the original English text in the output.
+7. Output in Markdown.
+8. First line should be the Japanese title (you may add a short, catchy title).
+9. After the title, insert a blank line, then the body.
+10. At the end, add a short source note like:
+「出典: {source_name}（英語原文）」
+
+Original article metadata:
+- Source: {source_name}
+- Title: {title}
+- URL: {link}
+- Published: {published}
+
+Original article content (English or partial):
+
+\"\"\"{base_text}\"\"\"
+    """.strip()
+
+    return prompt
+
+
+# ============================================================
+# Gemini で記事生成
+# ============================================================
+
+def create_gemini_client() -> genai.Client:
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is not set.")
+
+    # ★ここがポイント：API バージョンを v1 に固定
+    client = genai.Client(
+        api_key=api_key,
+        http_options=HttpOptions(api_version="v1"),
+    )
+    return client
+
+
+def generate_article_with_gemini(client: genai.Client, model_name: str, prompt: str) -> Optional[str]:
+    info("Generating Japanese article with Gemini...")
+    try:
+        resp = client.models.generate_content(
+            model=model_name,
+            contents=[prompt],
+        )
+    except Exception as e:
+        # google-genai の例外メッセージをそのまま出す
+        error(f"Gemini article generation failed: {e}")
+        return None
+
+    text = getattr(resp, "text", None)
+    if not text:
+        error("Gemini returned empty response text.")
+        return None
+
+    return text
+
+
+# ============================================================
+# Gemini 出力のパース（1行目をタイトル扱い）
+# ============================================================
+
+def parse_gemini_output_to_title_and_body(text: str) -> Tuple[str, str]:
+    lines = [ln.rstrip() for ln in text.splitlines()]
+    # 最初の非空行をタイトル候補に
+    first_idx = None
+    for i, ln in enumerate(lines):
+        if ln.strip():
+            first_idx = i
+            break
+
+    if first_idx is None:
+        # 何もなかったら丸ごと本文扱い
+        return "ミャンマー情勢ニュースダイジェスト", text
+
+    title_line = lines[first_idx].strip()
+    # 先頭の # を削る
+    if title_line.startswith("#"):
+        title_line = title_line.lstrip("#").strip()
+    if not title_line:
+        title_line = "ミャンマー情勢ニュースダイジェスト"
+
+    body_lines = lines[first_idx + 1 :]
+    # 先頭の空行は削る
+    while body_lines and not body_lines[0].strip():
+        body_lines.pop(0)
+
+    body = "\n".join(body_lines).strip()
+    if not body:
+        body = "（本文生成に失敗しました）"
+
+    return title_line, body
+
+
+# ============================================================
+# Hatena Blog への投稿
+# ============================================================
+
+def markdown_to_html(md_text: str) -> str:
+    return md.markdown(md_text, output_format="html5")
+
+
+def post_to_hatena(title: str, body_markdown: str) -> Optional[str]:
+    hatena_id = os.getenv("HATENA_ID")
+    hatena_blog_id = os.getenv("HATENA_BLOG_ID")
+    hatena_api_key = os.getenv("HATENA_API_KEY")
+
+    if not hatena_id or not hatena_blog_id or not hatena_api_key:
+        error("Hatena credentials are not fully set (HATENA_ID / HATENA_BLOG_ID / HATENA_API_KEY).")
+        return None
+
+    blog_url = f"https://blog.hatena.ne.jp/{hatena_id}/{hatena_blog_id}/atom/entry"
+
+    content_html = markdown_to_html(body_markdown)
+
+    # AtomPub エントリを XML 生成
+    entry = Element("entry", {"xmlns": "http://www.w3.org/2005/Atom"})
+
+    title_elem = SubElement(entry, "title")
+    title_elem.text = title
+
+    author_elem = SubElement(entry, "author")
+    name_elem = SubElement(author_elem, "name")
+    name_elem.text = hatena_id
+
+    content_elem = SubElement(entry, "content", {"type": "html"})
+    content_elem.text = content_html
+
+    updated_elem = SubElement(entry, "updated")
+    updated_elem.text = datetime.utcnow().isoformat() + "Z"
+
+    # 必要ならカテゴリを一個つけておく（任意）
+    cat_elem = SubElement(
+        entry,
+        "category",
+        {"term": "Myanmar", "scheme": "http://www.hatena.ne.jp/categories"},
     )
 
-
-def post_to_hatena(title: str, content_markdown: str) -> bool:
-    """
-    はてなブログに Markdown 記事を投稿する。
-    成功時 True / 失敗時 False を返す。
-    """
-    if not (HATENA_ID and HATENA_API_KEY and HATENA_BLOG_ID):
-        print("[ERROR] Hatena blog environment variables are not set.")
-        return False
-
-    endpoint = f"https://blog.hatena.ne.jp/{HATENA_ID}/{HATENA_BLOG_ID}/atom/entry"
-
-    updated = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
-
-    xml = f"""<?xml version="1.0" encoding="utf-8"?>
-<entry xmlns="http://www.w3.org/2005/Atom"
-       xmlns:app="http://www.w3.org/2007/app">
-  <title>{escape_xml(title)}</title>
-  <updated>{updated}</updated>
-  <content type="text/x-markdown">{escape_xml(content_markdown)}</content>
-  <category term="ミャンマー情勢" />
-  <app:control>
-    <app:draft>no</app:draft>
-  </app:control>
-</entry>
-""".strip()
+    xml_bytes = tostring(entry, encoding="utf-8")
 
     headers = {
-        "Content-Type": "application/xml; charset=utf-8",
+        "Content-Type": "application/atom+xml",
     }
 
     try:
         resp = requests.post(
-            endpoint,
-            data=xml.encode("utf-8"),
+            blog_url,
             headers=headers,
-            auth=(HATENA_ID, HATENA_API_KEY),
-            timeout=15,
+            data=xml_bytes,
+            auth=(hatena_id, hatena_api_key),
+            timeout=20,
         )
-        if 200 <= resp.status_code < 300:
-            print("[INFO] Hatena blog post succeeded. status =", resp.status_code)
-            return True
-        else:
-            print("[ERROR] Hatena blog post failed. status =", resp.status_code)
-            print(resp.text)
-            return False
     except Exception as e:
-        print("[ERROR] Exception while posting to Hatena:", e)
-        return False
+        error(f"Failed to POST to Hatena Blog: {e}")
+        return None
+
+    if resp.status_code == 201:
+        info("Hatena Blog post succeeded (status 201 Created).")
+        # Location ヘッダに記事URLが入っている場合が多い
+        post_url = resp.headers.get("Location") or ""
+        if post_url:
+            info(f"Posted entry URL: {post_url}")
+        return post_url or None
+    else:
+        error(f"Hatena Blog post failed: status={resp.status_code}, body={resp.text[:500]}")
+        return None
 
 
-# =========================================================
+# ============================================================
 # メイン処理
-# =========================================================
+# ============================================================
 
-def main():
+def main() -> None:
     print("==== Myanmar News Auto Poster (B: RSS翻訳＋要約モード) ====")
 
-    seen_ids = load_seen_article_ids()
+    # Gemini 設定
+    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash-001")
+    info(f"Using Gemini model: {model_name}")
 
-    selected_entry = None
-    selected_id = None
-    selected_source = None
-
-    # 各RSSを順に見て、まだ投稿していない記事を1件見つける
-    for source in RSS_SOURCES:
-        name = source["name"]
-        url = source["url"]
-        print(f"[INFO] Checking RSS source: {name} ({url})")
-
-        entries = fetch_rss_entries(url)
-        print(f"[INFO] RSS fetched: {url} / entries = {len(entries)}")
-
-        entry, article_id = pick_new_article(entries, seen_ids)
-        if entry is not None:
-            selected_entry = entry
-            selected_id = article_id
-            selected_source = name
-            print(f"[INFO] Selected new article from {name}: {entry.title}")
-            break
-
-    if selected_entry is None:
-        print("[INFO] No new article found in all RSS sources. Exit.")
+    try:
+        client = create_gemini_client()
+    except Exception as e:
+        error(f"Failed to create Gemini client: {e}")
         return
 
-    entry = selected_entry
-    article_id = selected_id
-    source_name = selected_source
+    # 既読記事ロード（なければ空ファイルを作る）
+    seen_ids = load_seen_articles()
 
-    article_title = getattr(entry, "title", "(no title)")
-    article_url = getattr(entry, "link", "")
-
-    # 元記事本文をできるだけ取得
-    content = ""
-    if article_url:
-        content = fetch_full_article_content(article_url)
-
-    # それでも空なら、summary/description などを fallback として使う
-    if not content:
-        summary = getattr(entry, "summary", "") or getattr(entry, "description", "")
-        fallback_text = f"Title: {article_title}\n\nSummary:\n{summary}"
-        content = fallback_text
-
-    print("[INFO] Generating Japanese article with Gemini...")
-
-    article_md = generate_article_with_gemini(
-        source_name=source_name,
-        article_title=article_title,
-        article_url=article_url,
-        article_content=content,
-    )
-
-    if not article_md:
-        print("[ERROR] Gemini failed to generate article. Exit without posting.")
-        # 失敗した記事は seen_ids に入れない（次回再トライのため）
+    # 新しい記事を 1 件だけ選ぶ
+    entry, source, article_id = choose_new_article(seen_ids)
+    if not entry or not source or not article_id:
+        info("No new article to post. Exit.")
         return
 
-    # 念のため、末尾に元記事リンクがなければ追加
-    if "元記事:" not in article_md and article_url:
-        article_md = article_md.rstrip() + f"\n\n元記事: {article_url}\n"
+    # 元記事本文を試しに取得（403などなら None）
+    link = entry.get("link", "")
+    article_text = None
+    if link:
+        article_text = fetch_article_content(link)
 
-    # 記事タイトルは Markdown の一行目の # から取る or entry.title を使う
-    first_line = article_md.lstrip().splitlines()[0] if article_md.strip() else ""
-    if first_line.startswith("#"):
-        post_title = first_line.lstrip("#").strip()
-    else:
-        post_title = article_title
+    # Gemini 用プロンプト作成
+    prompt = build_gemini_prompt(entry, article_text, source_name=source["name"])
 
-    print("[INFO] Posting article to Hatena blog...")
-    ok = post_to_hatena(post_title, article_md)
-
-    if not ok:
-        print("[ERROR] Failed to post article to Hatena. Exit without updating seen list.")
+    # Gemini で記事生成
+    gemini_output = generate_article_with_gemini(client, model_name, prompt)
+    if not gemini_output:
+        error("Gemini failed to generate article. Exit without posting.")
         return
 
-    # 正常に投稿できたら、この記事のIDを seen に追加して保存
-    if article_id not in seen_ids:
-        seen_ids.append(article_id)
-        save_seen_article_ids(seen_ids)
+    # タイトル & 本文に分割
+    title_ja, body_md = parse_gemini_output_to_title_and_body(gemini_output)
+
+    # はてなブログに投稿
+    post_url = post_to_hatena(title_ja, body_md)
+    if not post_url:
+        error("Failed to post to Hatena Blog. Exit without marking article as seen.")
+        return
+
+    # 正常終了したので既読扱いにして保存
+    seen_ids.add(article_id)
+    save_seen_articles(seen_ids)
+
+    info("All done.")
 
 
 if __name__ == "__main__":
