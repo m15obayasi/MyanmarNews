@@ -2,253 +2,253 @@ import os
 import json
 import time
 import requests
-import feedparser
 from bs4 import BeautifulSoup
+from lxml import etree
 from google import genai
 import markdown
 import re
 
+# --------------------------------------------------
+# 定数
+# --------------------------------------------------
+
 SEEN_FILE = "seen_articles.json"
 
-# =========================================================
-# Utility: JSON 読み込み/保存
-# =========================================================
+RSS_SOURCES = [
+    ("Irrawaddy", "https://www.irrawaddy.com/feed"),
+    # ("Myanmar Now", "https://myanmar-now.org/en/feed/"), 403 → 対策後に追加
+]
+
+MODEL = "gemini-2.0-flash"
+
+
+# --------------------------------------------------
+# seen 記録
+# --------------------------------------------------
+
 def load_seen():
     if os.path.exists(SEEN_FILE):
-        try:
-            with open(SEEN_FILE, "r", encoding="utf-8") as f:
-                return set(json.load(f))
-        except:
-            return set()
+        return set(json.loads(open(SEEN_FILE, "r", encoding="utf-8").read()))
     return set()
 
 
 def save_seen(seen):
     with open(SEEN_FILE, "w", encoding="utf-8") as f:
-        json.dump(list(seen), f, ensure_ascii=False, indent=2)
+        json.dump(sorted(list(seen)), f, ensure_ascii=False, indent=2)
 
 
-# =========================================================
-# Utility: Gemini 呼び出し（429対応）
-# =========================================================
-def call_gemini_with_retry(client, model, prompt, max_retries=5):
-    for i in range(max_retries):
-        try:
-            res = client.models.generate_content(model=model, contents=prompt)
-            return res.text
-        except Exception as e:
-            msg = str(e)
-            if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-                wait_sec = 50 + i * 10
-                print(f"[429] Quota exceeded. Waiting {wait_sec} sec...")
-                time.sleep(wait_sec)
-                continue
-            print("Gemini error:", e)
-            raise
-    raise RuntimeError("Gemini retry limit exceeded")
+# --------------------------------------------------
+# RSS 取得（feedparser 完全排除・安定版）
+# --------------------------------------------------
 
+def fetch_rss_xml(url, source_name):
+    print(f"Fetching RSS: {source_name}")
 
-# =========================================================
-# RSS 取得
-# =========================================================
-def fetch_rss(url, name):
-    print(f"Fetching RSS: {name} ...")
-    feed = feedparser.parse(url)
-    if feed.bozo:
-        print(f"RSS取得失敗（{name}）:", feed.bozo_exception)
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    try:
+        r = requests.get(url, timeout=20, headers=headers)
+    except:
+        print(f"接続エラー → {source_name}")
         return []
-    return feed.entries
+
+    if r.status_code != 200:
+        print(f"RSS取得失敗({source_name}): http {r.status_code}")
+        return []
+
+    # 文字コード問題があるため強制 UTF-8 デコード
+    xml_text = r.content.decode("utf-8", errors="replace")
+
+    try:
+        root = etree.fromstring(xml_text.encode("utf-8"))
+    except Exception as e:
+        print(f"XMLパース失敗({source_name}):", e)
+        return []
+
+    items = root.xpath("//item")
+
+    articles = []
+
+    for item in items:
+        get = lambda xp: item.xpath(xp)[0].text if item.xpath(xp) else ""
+
+        link = get("link")
+        if not link:
+            continue
+
+        title = get("title")
+        description = get("description")
+
+        articles.append({
+            "source": source_name,
+            "title": title.strip(),
+            "summary": BeautifulSoup(description, "html.parser").get_text().strip(),
+            "content": BeautifulSoup(description, "html.parser").get_text().strip(),
+            "link": link.strip(),
+        })
+
+    print(f"取得件数({source_name}): {len(articles)}")
+    return articles
 
 
-# =========================================================
-# タイトル翻訳（完全固定）
-# =========================================================
-def translate_title(client, title_en):
-    prompt = f"""
-以下の英語ニュースタイトルを「日本語の自然なニュースタイトル（1行だけ）」として翻訳してください。
+# --------------------------------------------------
+# Gemini：日本語タイトル + 記事本文生成
+# --------------------------------------------------
 
-# 厳守ルール
-- 出力は **タイトル1行のみ**
-- 箇条書き禁止
-- 複数候補禁止
-- 「提案」「候補」「以下に示す」「考えられる」など禁止
-- 補足文禁止
-- 丁寧語禁止
-- 文頭に余計な言葉禁止
-- 新聞の見出し調で、簡潔に1本
+def generate_article(article):
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-英語タイトル:
-{title_en}
+    # 英語タイトルを自然な日本語タイトルに変換する
+    title_prompt = f"""
+次の英語ニュースタイトルを、日本語の自然で硬派な「報道記事タイトル」に変換してください。
+・過剰翻訳しない
+・日本語ニュースの語順に整える
+・15〜40文字で
+・余計な文は書かない
 
-出力：日本語タイトル 1行のみ
+英語タイトル：
+{article["title"]}
 """
+    jp_title = client.models.generate_content(
+        model=MODEL,
+        contents=title_prompt
+    ).text.strip()
 
-    print("Translating title...")
-    title = call_gemini_with_retry(client, "gemini-2.0-flash", prompt)
-    title = title.strip().split("\n")[0]
-    title = re.sub(r"^[#\-\*\•：:\s]+", "", title).strip()
+    # ---- 本文生成 ----
+    body_prompt = f"""
+あなたは日本語の報道記事編集者です。
+以下のニュースをもとに、日本語で Markdown 記事を生成してください。
 
-    banned = ["いずれ", "候補", "提案", "示し", "考えら", "以下"]
-    if any(b in title for b in banned):
-        print("⚠ 不正なタイトル検出 → 再翻訳")
-        return translate_title(client, title_en)
+必ず次の形式のみで出力：
 
-    print("日本語タイトル:", title)
-    return title
-
-
-# =========================================================
-# Markdown レイアウト補正
-# =========================================================
-def fix_markdown_layout(md):
-    md = md.replace("\r\n", "\n")
-
-    md = re.sub(r"\n*(## .+?)\n*", r"\n\n\1\n\n", md)
-
-    md = re.sub(r"\n{3,}", "\n\n", md)
-
-    md = re.sub(r"^\s+", "", md, flags=re.MULTILINE)
-
-    return md.strip()
-
-
-# =========================================================
-# Gemini で本文生成
-# =========================================================
-def generate_markdown(client, article):
-    print("Generating article with Gemini...")
-
-    prompt = f"""
-以下のニュースをもとに、日本語の記事本文を Markdown 形式で生成してください。
-
-# 出力フォーマット（厳守）
 元記事URL: {article["link"]}
 
 ## 概要
-（要約）
+（ニュースのポイントを4〜6文で）
 
 ## 背景
-（背景説明。なければ空欄でよい）
+（政治状況・地理・関係勢力の説明。情報が少なければ短くて良い）
 
 ## 今後の見通し
-（予測不能なら記述しない）
+（予測が難しい場合は書かず、代わりに下記を出力）
 
 ## 推測
-（ニュースが与える可能性のある影響）
+（このニュースの波及効果、国際的影響を論理的に推測）
 
-# 禁止事項
-- タイトルを出力しない
-- 「候補案」「翻訳案」など禁止
-- 前置き禁止
-- 余計な解説禁止
+以下は元情報：
 
---- 英文データ ---
 英語タイトル:
 {article["title"]}
 
 概要:
 {article["summary"]}
 
-本文サマリ:
+本文(抜粋):
 {article["content"]}
+
+※ 注意：指示文・翻訳案・候補案は絶対に書かない
 """
 
-    text = call_gemini_with_retry(client, "gemini-2.0-flash", prompt)
+    body = client.models.generate_content(
+        model=MODEL,
+        contents=body_prompt
+    ).text
 
-    text = fix_markdown_layout(text)
-    return text
+    # ---- Markdown の整形 ----
+    body = clean_markdown(body)
+
+    return jp_title, body
 
 
-# =========================================================
-# はてなブログへ投稿（Markdown → HTML）
-# =========================================================
-def post_to_hatena(title, content_md):
+# --------------------------------------------------
+# Markdown 整形（改行・見出し修復）
+# --------------------------------------------------
+
+def clean_markdown(md):
+    # 連続空行を1つに
+    md = re.sub(r"\n{3,}", "\n\n", md)
+
+    # 見出し前に強制改行
+    md = re.sub(r"\n*##", "\n\n##", md)
+
+    # 余計な空白除去
+    md = md.strip()
+
+    return md
+
+
+# --------------------------------------------------
+# はてなブログ投稿
+# --------------------------------------------------
+
+def post_hatena(title, md):
     hatena_id = os.environ["HATENA_ID"]
     api_key = os.environ["HATENA_API_KEY"]
     blog_id = os.environ["HATENA_BLOG_ID"]
 
-    content_html = markdown.markdown(content_md, extensions=["extra"])
+    html = markdown.markdown(md, extensions=["extra"])
 
     xml = f"""<?xml version="1.0" encoding="utf-8"?>
-<entry xmlns="http://www.w3.org/2005/Atom"
-       xmlns:app="http://www.w3.org/2007/app">
-
+<entry xmlns="http://www.w3.org/2005/Atom">
   <title>{title}</title>
-
   <content type="text/html">
-{content_html}
+{html}
   </content>
-
-</entry>
-"""
+</entry>"""
 
     url = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
-    headers = {"Content-Type": "application/xml"}
 
-    print("Posting to Hatena Blog...")
-    r = requests.post(url, data=xml.encode("utf-8"), auth=(hatena_id, api_key))
+    r = requests.post(
+        url,
+        data=xml.encode("utf-8"),
+        auth=(hatena_id, api_key),
+        headers={"Content-Type": "application/xml"}
+    )
 
-    if r.status_code not in [200, 201]:
-        print("Hatena投稿失敗:", r.status_code, r.text)
+    if r.status_code in [200, 201]:
+        print("はてな投稿：成功")
+        return True
+    else:
+        print("はてな投稿：失敗", r.status_code, r.text)
         return False
 
-    print("Hatena投稿成功")
-    return True
 
-
-# =========================================================
+# --------------------------------------------------
 # メイン処理
-# =========================================================
+# --------------------------------------------------
+
 def main():
     print("==== Myanmar News Auto Poster ====")
 
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
     seen = load_seen()
+    new_seen = set(seen)
 
-    RSS_SOURCES = [
-        ("Irrawaddy", "https://www.irrawaddy.com/feed"),
-    ]
-
-    new_articles = []
-
+    all_articles = []
     for name, url in RSS_SOURCES:
-        entries = fetch_rss(url, name)
-        print("取得件数:", len(entries))
+        all_articles.extend(fetch_rss_xml(url, name))
 
-        for e in entries:
-            link = e.get("link")
-            if not link or link in seen:
-                continue
+    # 新規抽出
+    fresh = [a for a in all_articles if a["link"] not in seen]
 
-            summary = BeautifulSoup(e.get("summary", ""), "html.parser").get_text()
-            content_raw = e.get("content", [{"value": summary}])[0]["value"]
-            content = BeautifulSoup(content_raw, "html.parser").get_text()
+    print("新規記事数:", len(fresh))
 
-            new_articles.append({
-                "id": link,
-                "title": e.get("title", ""),
-                "summary": summary,
-                "content": content,
-                "link": link
-            })
-
-    print("新規記事:", len(new_articles))
-
-    if not new_articles:
-        print("新記事なし。終了します。")
+    if not fresh:
+        print("新しい記事なし → 終了")
         return
 
-    for article in new_articles:
-        jp_title = translate_title(client, article["title"])
-        md = generate_markdown(client, article)
+    # 1件ずつ記事生成 → 投稿
+    for a in fresh:
+        print("\n=== 記事生成 ===")
+        jp_title, md_body = generate_article(a)
 
-        ok = post_to_hatena(jp_title, md)
+        print("投稿タイトル:", jp_title)
 
+        ok = post_hatena(jp_title, md_body)
         if ok:
-            seen.add(article["id"])
-            save_seen(seen)
+            new_seen.add(a["link"])
+            save_seen(new_seen)
+            time.sleep(4)  # API 過負荷回避
 
 
-# =========================================================
 if __name__ == "__main__":
     main()
