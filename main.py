@@ -1,230 +1,174 @@
+# main.py
 # -*- coding: utf-8 -*-
-import os
-import json
-from datetime import datetime, timezone, timedelta
-import textwrap
-import requests
-from xml.sax.saxutils import escape as xml_escape
 
-# Google GenAI SDK
+import os
+import base64
+import datetime
+import html
+import textwrap
+
+import requests
+import markdown
 from google import genai
 
 
-def log(msg: str) -> None:
-    """シンプルなログ出力."""
-    print(msg, flush=True)
+# ===== 環境変数 =====
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+HATENA_ID = os.environ["HATENA_ID"]
+HATENA_API_KEY = os.environ["HATENA_API_KEY"]
+HATENA_BLOG_ID = os.environ["HATENA_BLOG_ID"]
+
+# ===== Gemini クライアント設定 =====
+# ★ポイント：api_version を v1 に固定
+client = genai.Client(
+    api_key=GEMINI_API_KEY,
+    http_options=genai.HttpOptions(api_version="v1"),
+)
+
+# Gemini モデル名
+MODEL_NAME = "gemini-1.5-flash"
+
+# 日本時間
+JST = datetime.timezone(datetime.timedelta(hours=9))
 
 
-def get_jst_now() -> datetime:
-    """JST の現在時刻を返す."""
-    return datetime.now(timezone(timedelta(hours=9)))
+def escape_xml(text: str) -> str:
+    """XML 用にエスケープ"""
+    if text is None:
+        return ""
+    return html.escape(text, quote=True)
 
 
-def build_gemini_prompt(jst_now: datetime) -> str:
-    """ミャンマー情勢の解説記事を生成させるためのプロンプトを作成."""
-    jst_str = jst_now.strftime("%Y-%m-%d %H:%M:%S (JST)")
-
-    # 注意：
-    # - 特定の日付・人数・金額・固有名詞などは新たに作らないように明示しています。
-    # - 参照元ブロックは Gemini ではなく、こちら側で付けるので、
-    #   本文には「参照元」という見出しは不要です。
-    prompt = f"""
-あなたはミャンマー情勢を専門とする日本語ニュースブロガーです。
-以下の条件で、ブログ記事を1本だけ執筆してください。
-
-# テーマ
-- ミャンマーの最近の情勢を、日本の一般読者向けにわかりやすく解説する記事。
-- 「The Irrawaddy（英語ニュースサイト）」などで継続的に報じられている話題を、
-  日本語でまとめて紹介するイメージです。
-
-# 内容の制約（重要）
-- 具体的な「日付」「人数」「金額」「地名」「個人名」「組織名」などの
-  **新しい固有名詞や数値情報は作らないでください。**
-- すでに一般的に知られている範囲の表現にとどめてください。
-  - 例: 「軍政」「民主派」「治安悪化」「インフレ」「越境貿易」など。
-- 読者が誤解しそうな、細かい事実（いつ・どこで・誰が・何人）といった情報は書かないでください。
-- あくまで「大まかな傾向」や「構造的な課題」「今後の注目ポイント」にフォーカスしてください。
-
-# 記事構成
-- 冒頭に短いリード文（2〜4文程度）を書いてください。
-- そのあとに「### 見出し」を3〜4個付けて、セクションごとに整理してください。
-- 各セクションでは、背景 → 現状の課題 → 住民・周辺国・国際社会への影響、
-  といった流れで、筋の通った説明を心がけてください。
-- 記事の最後に「今後のミャンマーウォッチのポイント」を、
-  箇条書きか短い段落で2〜3個まとめてください。
-
-# 文体
-- です・ます調。
-- 専門家ではない読者にも伝わるように、難しい用語には必ず一言で説明を添えてください。
-- 不必要に煽らず、しかし「遠い国の話ではない」という距離感を大事にしてください。
-
-# メタ情報
-- 執筆日時（日本時間）: {jst_str}
-
-# 出力フォーマット
-- Markdown で出力してください。
-- 一番最初の行は「# タイトル」の形式で、記事全体のタイトルを書いてください。
-- それ以外に余計な説明やコメントは入れず、ブログ本文だけを出力してください。
-"""
-    # インデントを綺麗に落とす
-    return textwrap.dedent(prompt).strip()
+def build_title() -> str:
+    """記事タイトルを自動生成（例：ミャンマー情勢まとめ（2025-11-22））"""
+    now = datetime.datetime.now(JST)
+    return f"ミャンマー情勢まとめ（{now.strftime('%Y-%m-%d')}）"
 
 
 def generate_article_with_gemini() -> str:
-    """Gemini を使って記事本文（Markdown）を生成."""
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY が環境変数に設定されていません。")
-
-    client = genai.Client(api_key=api_key)
-
-    jst_now = get_jst_now()
-    prompt = build_gemini_prompt(jst_now)
-
-    log("Generating article with Gemini...")
-    response = client.models.generate_content(
-        model="gemini-1.5-flash",
-        contents=[{"role": "user", "parts": [{"text": prompt}]}],
-        config={"max_output_tokens": 2048},
+    """Gemini でミャンマー解説記事（Markdown）を生成し、
+    冒頭に「参照元」セクションを付けた全文 Markdown を返す。
+    """
+    system_prompt = (
+        "あなたはミャンマー情勢に詳しい日本語のニュース解説者です。"
+        "読者は日本在住の一般の人たちで、ミャンマーの状況には関心があるものの、専門家ではありません。"
     )
 
-    text = (response.text or "").strip()
-    if not text:
-        raise RuntimeError("Gemini から空のレスポンスが返されました。")
+    user_prompt = """
+以下の条件で、ミャンマーに関するニュース解説記事を書いてください。
 
-    return text
+- テーマ: ミャンマーの最近の政治・社会・人道状況をわかりやすく整理した解説
+- 文字数: 日本語でおよそ 2000〜2500 文字
+- 構成:
+  - 導入
+  - 背景（クーデター以降の流れをざっくり）
+  - 最近の主な動き（複数のトピックを箇条書き＋解説）
+  - 市民生活・人道状況への影響
+  - 国際社会の対応
+  - 今後の見通し
+  - まとめ
+- 出力形式: Markdown
+- 見出しには「## 見出しタイトル」の形式を使う
+- 箇条書きには「- 」を使う
+- です・ます調で書く
+- 陰謀論や未確認情報は避け、公的機関や信頼できるメディアが報じている
+  「一般的に知られている事実」や傾向にとどめてください。
+- 特定の日付や「本日」などの表現は避け、
+  「最近」「ここ数年」「2020年代以降」などの表現を使ってください。
+"""
 
+    print("Generating article with Gemini...")
 
-def split_title_and_body(markdown_text: str):
-    """
-    Markdown からタイトル行（# ...）と本文を分離する。
-    タイトル行が見つからない場合はデフォルトタイトルを使う。
-    """
-    lines = markdown_text.splitlines()
-    title = "ミャンマー情勢の最近の動き（自動投稿）"
-    body_lines = lines
+    # google-genai v1 の正しい呼び出し方
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=[
+            {"role": "system", "parts": [{"text": system_prompt}]},
+            {"role": "user", "parts": [{"text": user_prompt}]},
+        ],
+    )
 
-    for idx, line in enumerate(lines):
-        if line.strip().startswith("#"):
-            # 先頭の # を全部削ってタイトルに
-            title = line.lstrip("#").strip()
-            body_lines = lines[idx + 1 :]
-            break
+    # レスポンスのテキストをまとめて取得
+    body_md = response.text.strip()
 
-    body = "\n".join(body_lines).strip()
-    return title, body
-
-
-def build_hatena_entry_xml(title: str, body_markdown: str) -> str:
-    """
-    はてなブログの Atom API に送る XML を組み立てる。
-    body_markdown は [markdown]〜[/markdown] でラップして送る。
-    """
-    # 参照元ブロックを本文の先頭に追加
-    source_block = textwrap.dedent(
+    # 冒頭の「参照元」セクションをコード側で付与
+    ref_section = textwrap.dedent(
         """\
-        参照元  
-        The Irrawaddy（英語ニュースサイト）  
-        https://www.irrawaddy.com/
+        ## 参照元
+
+        - この記事は外部ニュース記事を直接は参照せず、AI（Gemini）による自動生成の解説記事です。
+        - 内容は一般に報じられているミャンマー情勢の傾向をもとにしていますが、
+          最新の情報は各種ニュースサイトでご確認ください。
 
         ---
         """
-    ).strip()
+    )
 
-    body_with_source = f"{source_block}\n\n{body_markdown}".strip()
-    hatena_body = "[markdown]\n" + body_with_source + "\n[/markdown]"
+    full_md = ref_section + "\n\n" + body_md
+    return full_md
 
-    # XML エスケープ
-    title_xml = xml_escape(title)
-    content_xml = xml_escape(hatena_body)
 
-    now_utc = datetime.now(timezone.utc)
-    updated = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+def post_to_hatena(title: str, content_md: str) -> None:
+    """はてなブログに投稿する（AtomPub + Basic認証）"""
+    print("Posting to Hatena Blog...")
+
+    # Markdown -> HTML
+    html_body = markdown.markdown(content_md, extensions=["extra"])
+
+    updated = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     entry_xml = f"""<?xml version="1.0" encoding="utf-8"?>
-<entry xmlns="http://www.w3.org/2005/Atom"
-       xmlns:app="http://www.w3.org/2007/app">
-  <title>{title_xml}</title>
+<entry xmlns="http://www.w3.org/2005/Atom">
+  <title>{escape_xml(title)}</title>
   <updated>{updated}</updated>
+  <content type="text/html">{escape_xml(html_body)}</content>
+  <category term="ミャンマー" />
+  <category term="ニュース" />
   <author>
-    <name>{xml_escape(os.environ.get("HATENA_ID", ""))}</name>
+    <name>{escape_xml(HATENA_ID)}</name>
   </author>
-  <content type="text/x-markdown">{content_xml}</content>
-  <category term="ミャンマー情勢" />
-  <app:control>
-    <app:draft>no</app:draft>
-  </app:control>
 </entry>
 """
-    return entry_xml
 
+    url = f"https://blog.hatena.ne.jp/{HATENA_ID}/{HATENA_BLOG_ID}/atom/entry"
 
-def post_to_hatena(title: str, body_markdown: str) -> None:
-    """はてなブログに記事を投稿."""
-    hatena_id = os.environ.get("HATENA_ID")
-    api_key = os.environ.get("HATENA_API_KEY")
-    blog_id = os.environ.get("HATENA_BLOG_ID")
+    # Basic 認証ヘッダ（hatenaId:apiKey を Base64）
+    auth_str = base64.b64encode(
+        f"{HATENA_ID}:{HATENA_API_KEY}".encode("utf-8")
+    ).decode("ascii")
 
-    if not hatena_id or not api_key or not blog_id:
-        raise RuntimeError(
-            "HATENA_ID / HATENA_API_KEY / HATENA_BLOG_ID のいずれかが未設定です。"
-        )
+    headers = {
+        "Content-Type": "application/xml",
+        "Authorization": f"Basic {auth_str}",
+    }
 
-    endpoint = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
-
-    entry_xml = build_hatena_entry_xml(title, body_markdown)
-
-    log("Posting entry to Hatena Blog...")
     resp = requests.post(
-        endpoint,
+        url,
         data=entry_xml.encode("utf-8"),
-        headers={"Content-Type": "application/xml; charset=utf-8"},
-        auth=(hatena_id, api_key),
+        headers=headers,
         timeout=30,
     )
 
-    log(f"Hatena response status: {resp.status_code}")
-    # デバッグ用に一部だけ表示
-    snippet = (resp.text or "")[:300]
-    log(f"Hatena response body (head): {snippet}")
+    if not resp.ok:
+        print("Hatena API error status:", resp.status_code)
+        print(resp.text)
+        resp.raise_for_status()
 
-    if resp.status_code not in (200, 201):
-        raise RuntimeError(
-            f"Hatena Blog への投稿に失敗しました (status={resp.status_code})"
-        )
+    print("Hatena Blog posted successfully.")
 
 
-def write_seen_file(title: str) -> None:
-    """
-    GitHub Actions の add-and-commit 用に、seen_articles.json を必ず作る。
-    （この記事の重複チェックには使っていない）
-    """
-    data = {
-        "last_title": title,
-        "last_posted_at": get_jst_now().strftime("%Y-%m-%dT%H:%M:%S%z"),
-        "note": "This file is used only to make GitHub Actions commit succeed.",
-    }
-    with open("seen_articles.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    log("seen_articles.json を作成 / 更新しました。")
+def main() -> None:
+    print("==== Myanmar News Auto Poster (A: RSS無し・生成+投稿のみ) ====")
 
-
-def main():
-    log("==== Myanmar News Auto Poster (A: RSS無し・生成+投稿のみ) ====")
-
-    # 1. Gemini で記事を生成
+    # 記事本文（Markdown）生成
     article_md = generate_article_with_gemini()
-    title, body_md = split_title_and_body(article_md)
+    # タイトルはコード側で日付付きで作る
+    title = build_title()
 
-    log(f"Generated title: {title}")
+    # はてなブログに投稿
+    post_to_hatena(title, article_md)
 
-    # 2. はてなブログに投稿
-    post_to_hatena(title, body_md)
-
-    # 3. seen_articles.json を書き出し（GitHub Actions のため）
-    write_seen_file(title)
-
-    log("投稿処理が完了しました。")
+    print("Done.")
 
 
 if __name__ == "__main__":
