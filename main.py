@@ -32,42 +32,45 @@ RSS_SOURCES = [
     # 必要ならここに他の RSS 追加
 ]
 
-SEEN_FILE = "seen_articles.json"
+# 日本語版は既存ファイル名をそのまま利用
+SEEN_FILE_JA = "seen_articles.json"
+# 英語ブログ用に別ファイルを用意（初回は自動生成される）
+SEEN_FILE_EN = "seen_articles_en.json"
 
 
 # ===============================
 # ユーティリティ
 # ===============================
-def load_seen_ids() -> Set[str]:
+def load_seen_ids(path: str) -> Set[str]:
     """過去に投稿した記事 ID を読み込む"""
-    if not os.path.exists(SEEN_FILE):
-        logging.info("[INFO] seen_articles.json not found. Creating new empty file.")
-        save_seen_ids(set())
+    if not os.path.exists(path):
+        logging.info(f"[INFO] {path} not found. Creating new empty file.")
+        save_seen_ids(path, set())
         return set()
 
     try:
-        with open(SEEN_FILE, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         if isinstance(data, list):
             return set(data)
         elif isinstance(data, dict) and "ids" in data:
             return set(data["ids"])
         else:
-            logging.warning("[WARN] seen_articles.json format unknown, resetting.")
+            logging.warning(f"[WARN] {path} format unknown, resetting.")
             return set()
     except Exception as e:
-        logging.warning(f"[WARN] Failed to load seen_articles.json: {e}")
+        logging.warning(f"[WARN] Failed to load {path}: {e}")
         return set()
 
 
-def save_seen_ids(ids: Set[str]) -> None:
+def save_seen_ids(path: str, ids: Set[str]) -> None:
     """投稿済み記事 ID を保存する"""
     try:
-        with open(SEEN_FILE, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(sorted(list(ids)), f, ensure_ascii=False, indent=2)
-        logging.info("[INFO] seen_articles.json updated.")
+        logging.info(f"[INFO] {path} updated.")
     except Exception as e:
-        logging.error(f"[ERROR] Failed to save seen_articles.json: {e}")
+        logging.error(f"[ERROR] Failed to save {path}: {e}")
 
 
 def fetch_rss_entries(source: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -209,8 +212,11 @@ def build_prompt_for_article(
     source_name: str,
     entry: Any,
     article_text: str,
+    target_lang: str = "ja",
 ) -> str:
-    """英語記事 → 日本語ブログ記事を書くよう Gemini にお願いするプロンプトを生成"""
+    """
+    記事本文から、指定言語（日本語 / 英語）のブログ記事を生成するプロンプトを組み立てる。
+    """
 
     title = getattr(entry, "title", "")
     link = getattr(entry, "link", "")
@@ -219,7 +225,8 @@ def build_prompt_for_article(
     # 記事本文が取れなかった場合は summary を使う
     base_text = article_text.strip() or summary.strip() or title
 
-    prompt = f"""
+    if target_lang == "ja":
+        prompt = f"""
 あなたはミャンマー情勢に詳しい日本語ブロガーです。
 以下の英語ニュース記事の内容をもとに、
 日本語でわかりやすいブログ記事を書いてください。
@@ -245,6 +252,34 @@ def build_prompt_for_article(
 # 英語記事本文（または要約）
 {base_text}
 """.strip()
+    elif target_lang == "en":
+        prompt = f"""
+You are a blogger who is very familiar with politics and society in Myanmar.
+Based on the following English news article, write an easy-to-understand blog post **in English**.
+
+# Style & tone
+- Target readers: people who care about Myanmar but do not have time to read every long news article.
+- Explain complex political terms in simple language.
+- Avoid conspiracy theories or extreme claims; focus on facts plus modest, balanced commentary.
+- Length: around 800–1500 words.
+- Write an English title on the first line.
+- From the second line, write in Markdown with the following structure:
+  - Introduction: 2–3 sentences summarizing the news
+  - Background: why this event is happening
+  - Key points of this news: bullet list is OK
+  - Impact on Myanmar citizens, neighbouring countries, and the international community
+  - Short personal comment as a blogger at the end
+
+# News source
+- Source: {source_name}
+- Original Title: {title}
+- URL: {link}
+
+# Article body (or summary)
+{base_text}
+""".strip()
+    else:
+        raise ValueError(f"Unsupported target_lang: {target_lang}")
 
     return prompt
 
@@ -257,7 +292,7 @@ def split_title_and_body_from_gemini(text: str) -> Tuple[str, str]:
     """
     lines = text.splitlines()
     if not lines:
-        return "ミャンマー情勢ニュース", text
+        return "Myanmar News", text
 
     title = lines[0].strip().lstrip("#").strip()  # 先頭に # が付いていれば削る
     body = "\n".join(lines[1:]).strip()
@@ -269,17 +304,18 @@ def split_title_and_body_from_gemini(text: str) -> Tuple[str, str]:
 # ===============================
 # はてなブログ投稿
 # ===============================
-def post_to_hatena(title: str, body_md: str, source_link: str) -> None:
+def post_to_hatena(title: str, body_md: str, source_link: str, blog_id_env: str = "HATENA_BLOG_ID") -> None:
     """
     はてなブログに記事を投稿する（AtomPub）。
     content は HTML として送る。
+    blog_id_env で使用する環境変数名を指定する（例: HATENA_BLOG_ID, HATENA_BLOG_ID_EN）。
     """
     hatena_id = os.getenv("HATENA_ID")
     api_key = os.getenv("HATENA_API_KEY")
-    blog_id = os.getenv("HATENA_BLOG_ID")
+    blog_id = os.getenv(blog_id_env)
 
-    if not (hatena_id and api_key and blog_id):
-        raise RuntimeError("HATENA_ID / HATENA_API_KEY / HATENA_BLOG_ID が設定されていません。")
+    if not hatena_id or not api_key or not blog_id:
+        raise RuntimeError(f"HATENA_ID / HATENA_API_KEY / {blog_id_env} が設定されていません。")
 
     endpoint = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
 
@@ -308,7 +344,7 @@ def post_to_hatena(title: str, body_md: str, source_link: str) -> None:
     auth = (hatena_id, api_key)
     headers = {"Content-Type": "application/xml"}
 
-    logging.info("[INFO] Posting article to Hatena Blog...")
+    logging.info(f"[INFO] Posting article to Hatena Blog ({blog_id_env}={blog_id}) ...")
     resp = requests.post(endpoint, data=entry_xml.encode("utf-8"), headers=headers, auth=auth, timeout=30)
     try:
         resp.raise_for_status()
@@ -322,10 +358,18 @@ def post_to_hatena(title: str, body_md: str, source_link: str) -> None:
 # ===============================
 # メイン処理
 # ===============================
-def main() -> None:
-    logging.info("==== Myanmar News Auto Poster (B: RSS翻訳＋要約モード) ====")
+def main(target_lang: str = "ja") -> None:
+    logging.info(f"==== Myanmar News Auto Poster (lang={target_lang}) ====")
 
-    seen_ids = load_seen_ids()
+    # 言語ごとに別の seen ファイルを使う（日本語版は従来の seen_articles.json を継続利用）
+    if target_lang == "en":
+        seen_file = SEEN_FILE_EN
+        blog_id_env = "HATENA_BLOG_ID_EN"
+    else:
+        seen_file = SEEN_FILE_JA
+        blog_id_env = "HATENA_BLOG_ID"
+
+    seen_ids = load_seen_ids(seen_file)
 
     selected_entry = None
     selected_entry_id = None
@@ -360,15 +404,16 @@ def main() -> None:
         if html_content:
             article_text = html_to_text(html_content)
 
-    # 3. Gemini に日本語記事を生成してもらう
+    # 3. Gemini に記事を生成してもらう（target_lang に応じて日本語/英語を切り替え）
     prompt = build_prompt_for_article(
         source_name=selected_source["name"],
         entry=selected_entry,
         article_text=article_text,
+        target_lang=target_lang,
     )
 
     try:
-        logging.info("[INFO] Generating Japanese article with Gemini (REST v1beta)...")
+        logging.info(f"[INFO] Generating article with Gemini (REST v1beta, lang={target_lang})...")
         gemini_output = call_gemini_generate_content(prompt)
     except Exception as e:
         logging.error(f"[ERROR] Gemini article generation failed: {e}")
@@ -376,11 +421,11 @@ def main() -> None:
         logging.error("[ERROR] Gemini failed to generate article. Exit without posting.")
         return
 
-    title_ja, body_md = split_title_and_body_from_gemini(gemini_output)
+    title, body_md = split_title_and_body_from_gemini(gemini_output)
 
     # 4. はてなブログに投稿
     try:
-        post_to_hatena(title_ja, body_md, getattr(selected_entry, "link", ""))
+        post_to_hatena(title, body_md, getattr(selected_entry, "link", ""), blog_id_env=blog_id_env)
     except Exception as e:
         logging.error(f"[ERROR] Failed to post to Hatena Blog: {e}")
         logging.error(traceback.format_exc())
@@ -389,8 +434,19 @@ def main() -> None:
     # 5. 投稿済み ID を保存
     if selected_entry_id:
         seen_ids.add(selected_entry_id)
-        save_seen_ids(seen_ids)
+        save_seen_ids(seen_file, seen_ids)
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Myanmar News Auto Poster")
+    parser.add_argument(
+        "--lang",
+        choices=["ja", "en"],
+        default="ja",
+        help="Target language / blog ('ja' for Japanese blog, 'en' for English blog)",
+    )
+    args = parser.parse_args()
+
+    main(target_lang=args.lang)
