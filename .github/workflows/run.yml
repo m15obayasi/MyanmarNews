@@ -28,22 +28,30 @@ jobs:
             lxml \
             markdown
 
-      - name: Run script
+      - name: Run script for JA & EN blogs
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-2.5-flash      # ★ ここを 1.5 → 2.5 に変更
+          GEMINI_MODEL: gemini-2.5-flash
           HATENA_ID: ${{ secrets.HATENA_ID }}
           HATENA_API_KEY: ${{ secrets.HATENA_API_KEY }}
+          # 日本語ブログ用（既存）
           HATENA_BLOG_ID: ${{ secrets.HATENA_BLOG_ID }}
+          # 英語ブログ用（新規追加済みのはず）
+          HATENA_BLOG_ID_EN: ${{ secrets.HATENA_BLOG_ID_EN }}
         run: |
-          python main.py
+          # 日本語ブログに投稿
+          python main.py --lang ja
+          # 英語ブログに投稿
+          python main.py --lang en
 
-      - name: Save seen_articles.json
+      - name: Save seen_articles jsons
         uses: EndBug/add-and-commit@v9
         with:
           author_name: github-actions
           author_email: actions@github.com
-          message: "Update seen_articles.json"
-          add: "seen_articles.json"
+          message: "Update seen_articles.json (ja/en)"
+          add: |
+            seen_articles.json
+            seen_articles_en.json
           pathspec_error_handling: ignore   # ★ ファイルが無くてもエラーにしない
           push: true                        # ★ main へプッシュ
