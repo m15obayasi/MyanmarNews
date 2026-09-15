@@ -2,49 +2,58 @@ name: Daily Myanmar News Digest
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # 毎日 09:00 JST（0:00 UTC）
-  workflow_dispatch:       # 手動実行も可能
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      diagnose:
+        description: "Check connections without publishing (uses Gemini API)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: myanmar-news
+  cancel-in-progress: false
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 15
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install dependencies
-        run: |
-          pip install \
-            requests \
-            beautifulsoup4 \
-            feedparser \
-            google-genai \
-            lxml \
-            markdown
-
-      - name: Run script for JA & EN blogs
+        run: pip install requests beautifulsoup4 feedparser lxml markdown
+      - name: Run both languages
+        id: post
         env:
+          DIAGNOSE: ${{ inputs.diagnose }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-2.5-flash
           HATENA_ID: ${{ secrets.HATENA_ID }}
           HATENA_API_KEY: ${{ secrets.HATENA_API_KEY }}
-          # 日本語ブログ用（既存）
           HATENA_BLOG_ID: ${{ secrets.HATENA_BLOG_ID }}
-          # 英語ブログ用（新規追加済みのはず）
           HATENA_BLOG_ID_EN: ${{ secrets.HATENA_BLOG_ID_EN }}
+        shell: bash
         run: |
-          # 日本語ブログに投稿
-          python main.py --lang ja
-          # 英語ブログに投稿
-          python main.py --lang en
-
-      - name: Save seen_articles jsons
+          args=()
+          if [[ "$DIAGNOSE" == "true" ]]; then args+=(--diagnose); fi
+          status=0
+          for lang in ja en; do
+            if python main.py --lang "$lang" "${args[@]}"; then
+              echo "$lang: completed" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "$lang: failed; inspect logs" >> "$GITHUB_STEP_SUMMARY"
+              status=1
+            fi
+          done
+          exit "$status"
+      - name: Save successful posts
+        if: ${{ !cancelled() && steps.post.outcome != 'skipped' && inputs.diagnose != true }}
         uses: EndBug/add-and-commit@v9
         with:
           author_name: github-actions
@@ -53,5 +62,5 @@ jobs:
           add: |
             seen_articles.json
             seen_articles_en.json
-          pathspec_error_handling: ignore   # ★ ファイルが無くてもエラーにしない
-          push: true                        # ★ main へプッシュ
+          pathspec_error_handling: ignore
+          push: true
