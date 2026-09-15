@@ -371,13 +371,33 @@ def diagnose(target_lang: str) -> None:
     for name in ("GEMINI_API_KEY", "HATENA_ID", "HATENA_API_KEY", blog_env):
         if not os.getenv(name):
             raise RuntimeError(f"Missing environment variable: {name}")
+    failures = []
+    def check(name, operation):
+        try:
+            operation()
+            logging.info("DIAGNOSTIC %s: OK", name)
+        except Exception as exc:
+            response = getattr(exc, "response", None)
+            status = getattr(response, "status_code", None)
+            logging.error("DIAGNOSTIC %s: FAILED (%s, HTTP %s)", name, type(exc).__name__, status)
+            if name == "Gemini" and response is not None:
+                try:
+                    error = response.json().get("error", {})
+                    logging.error("Gemini status: %s; message: %s", error.get("status"), error.get("message"))
+                except ValueError:
+                    pass
+            failures.append(name)
     for source in RSS_SOURCES:
-        fetch_rss_entries(source)
-    call_gemini_generate_content("Reply with OK only.")
-    endpoint = f"https://blog.hatena.ne.jp/{os.environ['HATENA_ID']}/{os.environ[blog_env]}/atom/entry"
-    response = requests.get(endpoint, auth=(os.environ["HATENA_ID"], os.environ["HATENA_API_KEY"]), timeout=30)
-    response.raise_for_status()
-    logging.info("Diagnostics passed: RSS, Gemini, Hatena read access. No article posted.")
+        check("RSS", lambda: fetch_rss_entries(source))
+    check("Gemini", lambda: call_gemini_generate_content("Reply with OK only."))
+    def check_hatena():
+        endpoint = f"https://blog.hatena.ne.jp/{os.environ['HATENA_ID']}/{os.environ[blog_env]}/atom/entry"
+        response = requests.get(endpoint, auth=(os.environ["HATENA_ID"], os.environ["HATENA_API_KEY"]), timeout=30)
+        response.raise_for_status()
+    check("Hatena " + target_lang, check_hatena)
+    if failures:
+        raise RuntimeError("Diagnostics failed: " + ", ".join(failures))
+    logging.info("Diagnostics passed. No article posted.")
 
 
 def main(target_lang: str = "ja") -> None:
