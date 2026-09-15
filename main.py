@@ -71,6 +71,7 @@ def save_seen_ids(path: str, ids: Set[str]) -> None:
         logging.info(f"[INFO] {path} updated.")
     except Exception as e:
         logging.error(f"[ERROR] Failed to save {path}: {e}")
+        raise
 
 
 def fetch_rss_entries(source: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -79,8 +80,14 @@ def fetch_rss_entries(source: Dict[str, Any]) -> List[Dict[str, Any]]:
     name = source["name"]
     logging.info(f"[INFO] Checking RSS source: {name} ({url})")
 
-    feed = feedparser.parse(url)
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+    feed = feedparser.parse(response.content)
+    if getattr(feed, "bozo", False):
+        raise RuntimeError(f"Invalid RSS from {name}")
     entries = getattr(feed, "entries", []) or []
+    if not entries:
+        raise RuntimeError(f"RSS from {name} contains no entries")
     logging.info(f"[INFO] RSS fetched: {url} / entries = {len(entries)}")
     return entries
 
@@ -188,7 +195,7 @@ def call_gemini_generate_content(prompt: str) -> str:
     try:
         resp.raise_for_status()
     except Exception:
-        logging.error(f"[ERROR] Gemini HTTP error: {resp.status_code} {resp.text}")
+        logging.error(f"[ERROR] Gemini HTTP error: {resp.status_code}")
         raise
 
     data = resp.json()
@@ -358,6 +365,21 @@ def post_to_hatena(title: str, body_md: str, source_link: str, blog_id_env: str 
 # ===============================
 # メイン処理
 # ===============================
+def diagnose(target_lang: str) -> None:
+    """Check services without posting or modifying seen article records."""
+    blog_env = "HATENA_BLOG_ID_EN" if target_lang == "en" else "HATENA_BLOG_ID"
+    for name in ("GEMINI_API_KEY", "HATENA_ID", "HATENA_API_KEY", blog_env):
+        if not os.getenv(name):
+            raise RuntimeError(f"Missing environment variable: {name}")
+    for source in RSS_SOURCES:
+        fetch_rss_entries(source)
+    call_gemini_generate_content("Reply with OK only.")
+    endpoint = f"https://blog.hatena.ne.jp/{os.environ['HATENA_ID']}/{os.environ[blog_env]}/atom/entry"
+    response = requests.get(endpoint, auth=(os.environ["HATENA_ID"], os.environ["HATENA_API_KEY"]), timeout=30)
+    response.raise_for_status()
+    logging.info("Diagnostics passed: RSS, Gemini, Hatena read access. No article posted.")
+
+
 def main(target_lang: str = "ja") -> None:
     logging.info(f"==== Myanmar News Auto Poster (lang={target_lang}) ====")
 
@@ -419,7 +441,7 @@ def main(target_lang: str = "ja") -> None:
         logging.error(f"[ERROR] Gemini article generation failed: {e}")
         logging.error(traceback.format_exc())
         logging.error("[ERROR] Gemini failed to generate article. Exit without posting.")
-        return
+        raise
 
     title, body_md = split_title_and_body_from_gemini(gemini_output)
 
@@ -429,7 +451,7 @@ def main(target_lang: str = "ja") -> None:
     except Exception as e:
         logging.error(f"[ERROR] Failed to post to Hatena Blog: {e}")
         logging.error(traceback.format_exc())
-        return
+        raise
 
     # 5. 投稿済み ID を保存
     if selected_entry_id:
@@ -447,6 +469,11 @@ if __name__ == "__main__":
         default="ja",
         help="Target language / blog ('ja' for Japanese blog, 'en' for English blog)",
     )
+    parser.add_argument("--diagnose", action="store_true", help="Check services without publishing (uses one small Gemini request)")
     args = parser.parse_args()
 
-    main(target_lang=args.lang)
+    if args.diagnose:
+        diagnose(args.lang)
+    else:
+        main(target_lang=args.lang)
+
