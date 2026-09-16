@@ -3,6 +3,7 @@ import json
 import logging
 import traceback
 import html
+import re
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Set, Tuple
 
@@ -25,8 +26,8 @@ logging.basicConfig(
 # ===============================
 RSS_SOURCES = [
     {
-        "name": "The Irrawaddy (English)",
-        "url": "https://www.irrawaddy.com/feed",
+        "name": "DVB (English)",
+        "url": "https://english.dvb.no/feed/",
         "lang": "en",
     },
     # 必要ならここに他の RSS 追加
@@ -92,13 +93,37 @@ def fetch_rss_entries(source: Dict[str, Any]) -> List[Dict[str, Any]]:
     return entries
 
 
+MYANMAR_TERMS = re.compile(
+    r"\b(?:myanmar|burma|burmese|rohingya|yangon|rangoon|mandalay|"
+    r"naypyidaw|naypyitaw|rakhine|kachin|karenni|sagaing|"
+    r"aung san suu kyi|min aung hlaing)\b", re.IGNORECASE
+)
+
+
+def rss_article_text(entry: Any) -> str:
+    """Use content:encoded when available; otherwise the published summary."""
+    blocks = getattr(entry, "content", []) or []
+    values = [block.get("value", "") for block in blocks]
+    raw = "\n".join(value for value in values if value.strip())
+    return html_to_text(raw or getattr(entry, "summary", ""))
+
+
+def is_myanmar_related(entry: Any) -> bool:
+    tags = getattr(entry, "tags", []) or []
+    fields = [getattr(entry, "title", ""), getattr(entry, "summary", "")]
+    fields.extend(tag.get("term", "") for tag in tags)
+    # Avoid using publisher navigation/footer text as relevance evidence.
+    return bool(MYANMAR_TERMS.search(html_to_text(" ".join(fields))))
+
+
 def choose_new_entry(
     entries: List[Dict[str, Any]],
     seen_ids: Set[str],
 ) -> Optional[Tuple[Dict[str, Any], str]]:
     """まだ投稿していない記事を 1 本選ぶ"""
 
-    for e in entries:
+    # Stable ordering keeps the feed's newest-first order within each group.
+    for e in sorted(entries, key=lambda item: not is_myanmar_related(item)):
         entry_id = getattr(e, "id", None) or getattr(e, "link", None)
         if not entry_id:
             # ID が無い時はタイトル＋リンクとかで擬似 ID を作る
@@ -388,7 +413,18 @@ def diagnose(target_lang: str) -> None:
                     pass
             failures.append(name)
     for source in RSS_SOURCES:
-        check("RSS", lambda: fetch_rss_entries(source))
+        def check_feed():
+            entries = fetch_rss_entries(source)
+            related = [entry for entry in entries if is_myanmar_related(entry)]
+            logging.info("RSS entries: %s; Myanmar-related: %s", len(entries), len(related))
+            selected = choose_new_entry(entries, set())
+            if selected:
+                words = len(rss_article_text(selected[0]).split())
+                logging.info("Diagnostic selected title: %s; article words: %s",
+                             getattr(selected[0], "title", ""), words)
+                if words < 80:
+                    raise RuntimeError("Selected RSS article body is too short")
+        check("RSS", check_feed)
     check("Gemini", lambda: call_gemini_generate_content("Reply with OK only."))
     def check_hatena():
         endpoint = f"https://blog.hatena.ne.jp/{os.environ['HATENA_ID']}/{os.environ[blog_env]}/atom/entry"
@@ -438,13 +474,12 @@ def main(target_lang: str = "ja") -> None:
         f"{getattr(selected_entry, 'title', '')}"
     )
 
-    # 2. 記事本文を取得（失敗しても summary ベースで進める）
-    link = getattr(selected_entry, "link", "")
-    article_text = ""
-    if link:
-        html_content = fetch_article_html(link)
-        if html_content:
-            article_text = html_to_text(html_content)
+    # DVB publishes article content in RSS; avoid site navigation and paywalls.
+    article_text = rss_article_text(selected_entry)
+    if len(article_text.split()) < 80:
+        raise RuntimeError("RSS article text is too short for reliable generation")
+    logging.info("Myanmar-related selection: %s; RSS article words: %s",
+                 is_myanmar_related(selected_entry), len(article_text.split()))
 
     # 3. Gemini に記事を生成してもらう（target_lang に応じて日本語/英語を切り替え）
     prompt = build_prompt_for_article(
