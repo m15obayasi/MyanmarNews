@@ -3,6 +3,8 @@ import json
 import logging
 import traceback
 import html
+import re
+import time
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Set, Tuple
 
@@ -25,8 +27,8 @@ logging.basicConfig(
 # ===============================
 RSS_SOURCES = [
     {
-        "name": "The Irrawaddy (English)",
-        "url": "https://www.irrawaddy.com/feed",
+        "name": "DVB (English)",
+        "url": "https://english.dvb.no/feed/",
         "lang": "en",
     },
     # 必要ならここに他の RSS 追加
@@ -71,6 +73,7 @@ def save_seen_ids(path: str, ids: Set[str]) -> None:
         logging.info(f"[INFO] {path} updated.")
     except Exception as e:
         logging.error(f"[ERROR] Failed to save {path}: {e}")
+        raise
 
 
 def fetch_rss_entries(source: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -79,10 +82,39 @@ def fetch_rss_entries(source: Dict[str, Any]) -> List[Dict[str, Any]]:
     name = source["name"]
     logging.info(f"[INFO] Checking RSS source: {name} ({url})")
 
-    feed = feedparser.parse(url)
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+    feed = feedparser.parse(response.content)
+    if getattr(feed, "bozo", False):
+        raise RuntimeError(f"Invalid RSS from {name}")
     entries = getattr(feed, "entries", []) or []
+    if not entries:
+        raise RuntimeError(f"RSS from {name} contains no entries")
     logging.info(f"[INFO] RSS fetched: {url} / entries = {len(entries)}")
     return entries
+
+
+MYANMAR_TERMS = re.compile(
+    r"\b(?:myanmar|burma|burmese|rohingya|yangon|rangoon|mandalay|"
+    r"naypyidaw|naypyitaw|rakhine|kachin|karenni|sagaing|"
+    r"aung san suu kyi|min aung hlaing)\b", re.IGNORECASE
+)
+
+
+def rss_article_text(entry: Any) -> str:
+    """Use content:encoded when available; otherwise the published summary."""
+    blocks = getattr(entry, "content", []) or []
+    values = [block.get("value", "") for block in blocks]
+    raw = "\n".join(value for value in values if value.strip())
+    return html_to_text(raw or getattr(entry, "summary", ""))
+
+
+def is_myanmar_related(entry: Any) -> bool:
+    tags = getattr(entry, "tags", []) or []
+    fields = [getattr(entry, "title", ""), getattr(entry, "summary", "")]
+    fields.extend(tag.get("term", "") for tag in tags)
+    # Avoid using publisher navigation/footer text as relevance evidence.
+    return bool(MYANMAR_TERMS.search(html_to_text(" ".join(fields))))
 
 
 def choose_new_entry(
@@ -91,7 +123,8 @@ def choose_new_entry(
 ) -> Optional[Tuple[Dict[str, Any], str]]:
     """まだ投稿していない記事を 1 本選ぶ"""
 
-    for e in entries:
+    # Stable ordering keeps the feed's newest-first order within each group.
+    for e in sorted(entries, key=lambda item: not is_myanmar_related(item)):
         entry_id = getattr(e, "id", None) or getattr(e, "link", None)
         if not entry_id:
             # ID が無い時はタイトル＋リンクとかで擬似 ID を作る
@@ -184,11 +217,17 @@ def call_gemini_generate_content(prompt: str) -> str:
 
     logging.info(f"[INFO] Calling Gemini REST API (model={model}) ...")
 
-    resp = requests.post(url, headers=headers, json=payload, timeout=60)
+    for attempt in range(3):
+        resp = requests.post(url, headers=headers, json=payload, timeout=60)
+        if resp.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
+            break
+        delay = 10 * (2 ** attempt)
+        logging.warning("Gemini temporarily unavailable (HTTP %s); retry in %ss", resp.status_code, delay)
+        time.sleep(delay)
     try:
         resp.raise_for_status()
     except Exception:
-        logging.error(f"[ERROR] Gemini HTTP error: {resp.status_code} {resp.text}")
+        logging.error(f"[ERROR] Gemini HTTP error: {resp.status_code}")
         raise
 
     data = resp.json()
@@ -358,6 +397,52 @@ def post_to_hatena(title: str, body_md: str, source_link: str, blog_id_env: str 
 # ===============================
 # メイン処理
 # ===============================
+def diagnose(target_lang: str) -> None:
+    """Check services without posting or modifying seen article records."""
+    blog_env = "HATENA_BLOG_ID_EN" if target_lang == "en" else "HATENA_BLOG_ID"
+    for name in ("GEMINI_API_KEY", "HATENA_ID", "HATENA_API_KEY", blog_env):
+        if not os.getenv(name):
+            raise RuntimeError(f"Missing environment variable: {name}")
+    failures = []
+    def check(name, operation):
+        try:
+            operation()
+            logging.info("DIAGNOSTIC %s: OK", name)
+        except Exception as exc:
+            response = getattr(exc, "response", None)
+            status = getattr(response, "status_code", None)
+            logging.error("DIAGNOSTIC %s: FAILED (%s, HTTP %s)", name, type(exc).__name__, status)
+            if name == "Gemini" and response is not None:
+                try:
+                    error = response.json().get("error", {})
+                    logging.error("Gemini status: %s; message: %s", error.get("status"), error.get("message"))
+                except ValueError:
+                    pass
+            failures.append(name)
+    for source in RSS_SOURCES:
+        def check_feed():
+            entries = fetch_rss_entries(source)
+            related = [entry for entry in entries if is_myanmar_related(entry)]
+            logging.info("RSS entries: %s; Myanmar-related: %s", len(entries), len(related))
+            selected = choose_new_entry(entries, set())
+            if selected:
+                words = len(rss_article_text(selected[0]).split())
+                logging.info("Diagnostic selected title: %s; article words: %s",
+                             getattr(selected[0], "title", ""), words)
+                if words < 80:
+                    raise RuntimeError("Selected RSS article body is too short")
+        check("RSS", check_feed)
+    check("Gemini", lambda: call_gemini_generate_content("Reply with OK only."))
+    def check_hatena():
+        endpoint = f"https://blog.hatena.ne.jp/{os.environ['HATENA_ID']}/{os.environ[blog_env]}/atom/entry"
+        response = requests.get(endpoint, auth=(os.environ["HATENA_ID"], os.environ["HATENA_API_KEY"]), timeout=30)
+        response.raise_for_status()
+    check("Hatena " + target_lang, check_hatena)
+    if failures:
+        raise RuntimeError("Diagnostics failed: " + ", ".join(failures))
+    logging.info("Diagnostics passed. No article posted.")
+
+
 def main(target_lang: str = "ja") -> None:
     logging.info(f"==== Myanmar News Auto Poster (lang={target_lang}) ====")
 
@@ -396,13 +481,12 @@ def main(target_lang: str = "ja") -> None:
         f"{getattr(selected_entry, 'title', '')}"
     )
 
-    # 2. 記事本文を取得（失敗しても summary ベースで進める）
-    link = getattr(selected_entry, "link", "")
-    article_text = ""
-    if link:
-        html_content = fetch_article_html(link)
-        if html_content:
-            article_text = html_to_text(html_content)
+    # DVB publishes article content in RSS; avoid site navigation and paywalls.
+    article_text = rss_article_text(selected_entry)
+    if len(article_text.split()) < 80:
+        raise RuntimeError("RSS article text is too short for reliable generation")
+    logging.info("Myanmar-related selection: %s; RSS article words: %s",
+                 is_myanmar_related(selected_entry), len(article_text.split()))
 
     # 3. Gemini に記事を生成してもらう（target_lang に応じて日本語/英語を切り替え）
     prompt = build_prompt_for_article(
@@ -419,7 +503,7 @@ def main(target_lang: str = "ja") -> None:
         logging.error(f"[ERROR] Gemini article generation failed: {e}")
         logging.error(traceback.format_exc())
         logging.error("[ERROR] Gemini failed to generate article. Exit without posting.")
-        return
+        raise
 
     title, body_md = split_title_and_body_from_gemini(gemini_output)
 
@@ -429,7 +513,7 @@ def main(target_lang: str = "ja") -> None:
     except Exception as e:
         logging.error(f"[ERROR] Failed to post to Hatena Blog: {e}")
         logging.error(traceback.format_exc())
-        return
+        raise
 
     # 5. 投稿済み ID を保存
     if selected_entry_id:
@@ -447,6 +531,12 @@ if __name__ == "__main__":
         default="ja",
         help="Target language / blog ('ja' for Japanese blog, 'en' for English blog)",
     )
+    parser.add_argument("--diagnose", action="store_true", help="Check services without publishing (uses one small Gemini request)")
     args = parser.parse_args()
 
-    main(target_lang=args.lang)
+    if args.diagnose:
+        diagnose(args.lang)
+    else:
+        main(target_lang=args.lang)
+
+
