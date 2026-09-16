@@ -4,6 +4,7 @@ import logging
 import traceback
 import html
 import re
+import time
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Set, Tuple
 
@@ -216,7 +217,13 @@ def call_gemini_generate_content(prompt: str) -> str:
 
     logging.info(f"[INFO] Calling Gemini REST API (model={model}) ...")
 
-    resp = requests.post(url, headers=headers, json=payload, timeout=60)
+    for attempt in range(3):
+        resp = requests.post(url, headers=headers, json=payload, timeout=60)
+        if resp.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
+            break
+        delay = 10 * (2 ** attempt)
+        logging.warning("Gemini temporarily unavailable (HTTP %s); retry in %ss", resp.status_code, delay)
+        time.sleep(delay)
     try:
         resp.raise_for_status()
     except Exception:
@@ -531,4 +538,5 @@ if __name__ == "__main__":
         diagnose(args.lang)
     else:
         main(target_lang=args.lang)
+
 
