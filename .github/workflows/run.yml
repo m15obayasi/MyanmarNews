@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 feedparser lxml markdown
+        run: pip install requests requests-oauthlib beautifulsoup4 feedparser lxml markdown
       - name: Run both languages
         id: post
         env:
@@ -38,6 +38,10 @@ jobs:
           HATENA_API_KEY: ${{ secrets.HATENA_API_KEY }}
           HATENA_BLOG_ID: ${{ secrets.HATENA_BLOG_ID }}
           HATENA_BLOG_ID_EN: ${{ secrets.HATENA_BLOG_ID_EN }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
         shell: bash
         run: |
           args=()
