@@ -5,6 +5,7 @@ import traceback
 import html
 import re
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Set, Tuple
 
@@ -12,6 +13,7 @@ import requests
 import feedparser
 from bs4 import BeautifulSoup
 import markdown
+from requests_oauthlib import OAuth1
 
 
 # ===============================
@@ -343,7 +345,7 @@ def split_title_and_body_from_gemini(text: str) -> Tuple[str, str]:
 # ===============================
 # はてなブログ投稿
 # ===============================
-def post_to_hatena(title: str, body_md: str, source_link: str, blog_id_env: str = "HATENA_BLOG_ID") -> None:
+def post_to_hatena(title: str, body_md: str, source_link: str, blog_id_env: str = "HATENA_BLOG_ID") -> Optional[str]:
     """
     はてなブログに記事を投稿する（AtomPub）。
     content は HTML として送る。
@@ -392,6 +394,59 @@ def post_to_hatena(title: str, body_md: str, source_link: str, blog_id_env: str 
         raise
 
     logging.info("[INFO] Hatena Blog post success.")
+
+    location = resp.headers.get("Location")
+    if location:
+        return location
+    try:
+        root = ET.fromstring(resp.text)
+        for link in root.findall("{http://www.w3.org/2005/Atom}link"):
+            if link.get("rel") == "alternate" and link.get("href"):
+                return link.get("href")
+    except ET.ParseError:
+        pass
+    logging.warning("[WARNING] Hatena response did not include the published article URL; skipping X post.")
+    return None
+
+
+def build_x_post_text(title: str, article_url: str) -> str:
+    """Build a conservatively sized X post containing the article title and URL."""
+    clean_title = " ".join(title.split())
+    if len(clean_title) > 100:
+        clean_title = clean_title[:99].rstrip() + "…"
+    return f"{clean_title}\n{article_url}"
+
+
+def post_to_x_if_configured(title: str, article_url: str) -> Optional[str]:
+    """Post to X using OAuth 1.0a. Skip cleanly until all credentials are configured."""
+    names = ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_TOKEN_SECRET")
+    credentials = {name: os.getenv(name) for name in names}
+    configured = [name for name, value in credentials.items() if value]
+    if not configured:
+        logging.info("[INFO] X credentials are not configured; skipping X post.")
+        return None
+    missing = [name for name, value in credentials.items() if not value]
+    if missing:
+        raise RuntimeError("Incomplete X credentials: missing " + ", ".join(missing))
+
+    auth = OAuth1(
+        credentials["X_API_KEY"],
+        credentials["X_API_SECRET"],
+        credentials["X_ACCESS_TOKEN"],
+        credentials["X_ACCESS_TOKEN_SECRET"],
+    )
+    response = requests.post(
+        "https://api.x.com/2/tweets",
+        json={"text": build_x_post_text(title, article_url)},
+        auth=auth,
+        timeout=30,
+    )
+    response.raise_for_status()
+    post_id = response.json().get("data", {}).get("id")
+    if not post_id:
+        raise RuntimeError("X API response did not include a post ID")
+    logging.info("[INFO] X post success (id=%s).", post_id)
+    return post_id
 
 
 # ===============================
@@ -509,7 +564,7 @@ def main(target_lang: str = "ja") -> None:
 
     # 4. はてなブログに投稿
     try:
-        post_to_hatena(title, body_md, getattr(selected_entry, "link", ""), blog_id_env=blog_id_env)
+        article_url = post_to_hatena(title, body_md, getattr(selected_entry, "link", ""), blog_id_env=blog_id_env)
     except Exception as e:
         logging.error(f"[ERROR] Failed to post to Hatena Blog: {e}")
         logging.error(traceback.format_exc())
@@ -519,6 +574,10 @@ def main(target_lang: str = "ja") -> None:
     if selected_entry_id:
         seen_ids.add(selected_entry_id)
         save_seen_ids(seen_file, seen_ids)
+
+    # Persist the article first so an X failure cannot cause a duplicate blog post.
+    if target_lang == "ja" and article_url:
+        post_to_x_if_configured(title, article_url)
 
 
 if __name__ == "__main__":
