@@ -1,6 +1,7 @@
 """Create one source-grounded Japanese Myanmar explainer per day."""
 
 import argparse
+import html
 import json
 import logging
 import os
@@ -164,13 +165,47 @@ def fetch_research_sources(topic: Dict[str, str], limit: int = 5) -> List[Dict[s
     """Return direct URLs and usable excerpts from distinct trusted publishers."""
     results: List[Dict[str, str]] = []
     used_domains = set()
+    terms = research_terms(topic["query"])
+    wordpress_sites = [
+        ("english.dvb.no", "https://english.dvb.no/wp-json/wp/v2/posts"),
+        ("myanmar-now.org", "https://myanmar-now.org/en/wp-json/wp/v2/posts"),
+    ]
+    for domain, endpoint in wordpress_sites:
+        try:
+            response = requests.get(
+                endpoint,
+                params={"search": topic["query"], "per_page": "10", "orderby": "relevance"},
+                timeout=30,
+                headers={"User-Agent": "MyanmarNewsBot/1.0 (+https://github.com/m15obayasi/MyanmarNews)"},
+            )
+            response.raise_for_status()
+            posts = response.json()
+        except Exception as exc:
+            logging.warning("WordPress research API failed for %s: %s", domain, exc)
+            continue
+        ranked_posts = []
+        for post in posts:
+            title = html.unescape(news.html_to_text(str(post.get("title", {}).get("rendered", ""))))
+            text = news.html_to_text(str(post.get("content", {}).get("rendered", "")))
+            haystack = (title + "\n" + text[:5000]).lower()
+            matched = {term for term in terms if re.search(rf"\b{re.escape(term)}\b", haystack)}
+            if len(text.split()) >= 120 and len(matched) >= min(2, len(terms)):
+                ranked_posts.append((len(matched), post, title, text))
+        if ranked_posts:
+            _, post, title, text = max(ranked_posts, key=lambda item: item[0])
+            results.append({
+                "publisher": domain,
+                "title": title,
+                "url": str(post.get("link", "")),
+                "date": str(post.get("date_gmt", "")),
+                "excerpt": text[:5000],
+            })
+            used_domains.add(domain)
+
     encoded_query = quote_plus(topic["query"])
     search_feeds = [
-        ("english.dvb.no", f"https://english.dvb.no/?s={encoded_query}&feed=rss2"),
-        ("myanmar-now.org", f"https://myanmar-now.org/en/?s={encoded_query}&feed=rss2"),
         ("reliefweb.int", f"https://reliefweb.int/updates/rss.xml?search=Myanmar%20{encoded_query}"),
     ]
-    terms = research_terms(topic["query"])
     for domain, feed_url in search_feeds:
         try:
             entries = news.fetch_rss_entries({"name": f"research:{domain}", "url": feed_url})

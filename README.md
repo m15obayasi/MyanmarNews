@@ -14,7 +14,6 @@
 必須:
 
 - `GEMINI_API_KEY`
-- `GEMINI_MODEL`（未設定なら `gemini-2.5-flash`）
 - `HATENA_ID`
 - `HATENA_API_KEY`
 - `HATENA_BLOG_ID`
@@ -28,6 +27,7 @@
 - `X_ACCESS_TOKEN_SECRET`
 
 値はコードやログに書かず、GitHub Secretsから環境変数として渡します。
+Geminiのモデル名は秘密情報ではないため、ワークフロー内で `gemini-2.5-flash` を指定しています。
 
 ## 手動確認
 

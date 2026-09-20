@@ -133,7 +133,10 @@ class ExplainerTests(unittest.TestCase):
             {"domain": "reuters.com", "url": "https://reuters.com/b", "title": "B"},
         ]
         page = "<article><p>" + ("word " * 150) + "</p></article>"
-        with patch.object(explainer, "gdelt_candidates", return_value=candidates), patch.object(explainer.news, "fetch_rss_entries", return_value=[]), patch.object(explainer.news, "fetch_article_html", return_value=page):
+        empty = Mock()
+        empty.json.return_value = []
+        empty.raise_for_status.return_value = None
+        with patch.object(explainer.requests, "get", return_value=empty), patch.object(explainer, "gdelt_candidates", return_value=candidates), patch.object(explainer.news, "fetch_rss_entries", return_value=[]), patch.object(explainer.news, "fetch_article_html", return_value=page):
             with self.assertRaises(RuntimeError):
                 explainer.fetch_research_sources(topic)
 
