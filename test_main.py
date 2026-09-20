@@ -7,6 +7,30 @@ def entry(identity, title, summary="", content=None):
     return Entry(id=identity, title=title, summary=summary, content=content or [])
 
 class PosterTests(unittest.TestCase):
+    def test_build_x_post_text_is_bounded_and_keeps_url(self):
+        text = app.build_x_post_text("題" * 120, "https://example.com/post")
+        title, url = text.splitlines()
+        self.assertEqual(len(title), 100)
+        self.assertTrue(title.endswith("…"))
+        self.assertEqual(url, "https://example.com/post")
+
+    def test_x_post_skips_without_credentials(self):
+        with patch.dict(app.os.environ, {}, clear=True), patch.object(app.requests, "post") as post:
+            self.assertIsNone(app.post_to_x_if_configured("Title", "https://example.com"))
+            post.assert_not_called()
+
+    def test_x_post_uses_api_and_returns_id(self):
+        env = {
+            "X_API_KEY": "key", "X_API_SECRET": "secret",
+            "X_ACCESS_TOKEN": "token", "X_ACCESS_TOKEN_SECRET": "token-secret",
+        }
+        response = Mock()
+        response.json.return_value = {"data": {"id": "123"}}
+        with patch.dict(app.os.environ, env, clear=True), patch.object(app.requests, "post", return_value=response) as post:
+            self.assertEqual(app.post_to_x_if_configured("Title", "https://example.com"), "123")
+            self.assertEqual(post.call_args.kwargs["json"]["text"], "Title\nhttps://example.com")
+            response.raise_for_status.assert_called_once()
+
     def test_gemini_retry_is_bounded(self):
         unavailable = Mock(status_code=503)
         unavailable.raise_for_status.side_effect = app.requests.HTTPError("503")
