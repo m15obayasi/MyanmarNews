@@ -2,5 +2,6 @@ beautifulsoup4==4.14.2
 feedparser==6.0.12
 lxml==6.0.2
 Markdown==3.9
+pypdf==6.1.1
 requests==2.32.5
 requests-oauthlib==2.0.0

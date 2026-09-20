@@ -3,6 +3,7 @@ from unittest.mock import patch, Mock
 from feedparser import FeedParserDict as Entry
 import main as app
 import explainer
+import japan_life
 
 def entry(identity, title, summary="", content=None):
     return Entry(id=identity, title=title, summary=summary, content=content or [])
@@ -139,6 +140,38 @@ class ExplainerTests(unittest.TestCase):
         with patch.object(explainer.requests, "get", return_value=empty), patch.object(explainer, "gdelt_candidates", return_value=candidates), patch.object(explainer.news, "fetch_rss_entries", return_value=[]), patch.object(explainer.news, "fetch_article_html", return_value=page):
             with self.assertRaises(RuntimeError):
                 explainer.fetch_research_sources(topic)
+
+
+class JapanLifeTests(unittest.TestCase):
+    def test_used_life_topic_is_excluded(self):
+        topic = japan_life.select_topic([{"id": "residence-card-loss"}])
+        self.assertNotEqual(topic["id"], "residence-card-loss")
+
+    def test_requested_unknown_or_used_topic_is_rejected(self):
+        with self.assertRaises(RuntimeError):
+            japan_life.select_topic([], "invented")
+        with self.assertRaises(RuntimeError):
+            japan_life.select_topic([{"id": "health-insurance"}], "health-insurance")
+
+    def test_relevant_excerpt_prefers_keyword_section(self):
+        text = ("unrelated text " * 300) + ("在留カード 紛失 再交付 警察 14日 " * 120)
+        excerpt = japan_life._relevant_excerpt(text, ["在留カード", "紛失", "再交付"])
+        self.assertIn("在留カード", excerpt)
+
+    def test_article_validation_requires_myanmar_text_length_and_source(self):
+        valid_body = "မြန်မာဘာသာ " * 100 + "\nhttps://www.moj.go.jp/"
+        japan_life.validate_article("ဂျပန်တွင် နေထိုင်ခြင်း", valid_body)
+        with self.assertRaises(RuntimeError):
+            japan_life.validate_article("Japanese title", "x" * 1000 + " https://example.com")
+
+    def test_dry_run_never_posts_or_changes_history(self):
+        generated = "ဂျပန်တွင် နေထိုင်ခြင်း\n" + ("မြန်မာဘာသာ " * 100) + "\nhttps://www.moj.go.jp/"
+        sources = [{"title": "Official", "url": "https://www.moj.go.jp/", "excerpt": "x" * 500}]
+        with patch.object(japan_life, "load_history", return_value=[]), patch.object(japan_life, "collect_sources", return_value=sources), patch.object(japan_life.news, "call_gemini_generate_content", return_value=generated), patch.object(japan_life.news, "post_to_hatena") as post, patch.object(japan_life, "save_history") as save:
+            result = japan_life.run(dry_run=True, topic_id="residence-card-loss")
+        self.assertIsNone(result["article_url"])
+        post.assert_not_called()
+        save.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()

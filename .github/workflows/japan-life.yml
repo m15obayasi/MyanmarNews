@@ -1,0 +1,64 @@
+name: Daily Japan Life Guide in Myanmar
+
+on:
+  schedule:
+    # 11:00 JST. GitHub schedules use UTC and may start a little late.
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Generate and validate without publishing"
+        type: boolean
+        default: true
+      topic:
+        description: "Optional curated topic id"
+        type: string
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: myanmar-publishing
+  cancel-in-progress: false
+
+jobs:
+  publish-japan-life-guide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install --requirement requirements.txt
+      - name: Generate source-grounded Myanmar guide
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          TOPIC: ${{ inputs.topic }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-2.5-flash
+          HATENA_ID: ${{ secrets.HATENA_ID }}
+          HATENA_API_KEY: ${{ secrets.HATENA_API_KEY }}
+          HATENA_BLOG_ID_INFO: myanmar-japan-info.hatenablog.com
+        shell: bash
+        run: |
+          args=()
+          if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
+          if [[ -n "$TOPIC" ]]; then args+=(--topic "$TOPIC"); fi
+          python japan_life.py "${args[@]}"
+      - name: Save published topic history
+        if: ${{ !cancelled() && inputs.dry_run != true }}
+        shell: bash
+        run: |
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add japan_life_topics.json
+          if git diff --cached --quiet; then
+            echo "No Japan-life topic history change."
+          else
+            git commit -m "Record published Japan-life guide"
+            git push
+          fi
