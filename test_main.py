@@ -2,11 +2,31 @@ import unittest
 from unittest.mock import patch, Mock
 from feedparser import FeedParserDict as Entry
 import main as app
+import explainer
 
 def entry(identity, title, summary="", content=None):
     return Entry(id=identity, title=title, summary=summary, content=content or [])
 
 class PosterTests(unittest.TestCase):
+    def test_rss_retries_transient_server_error(self):
+        failed = Mock(status_code=500, content=b"")
+        failed.raise_for_status.side_effect = app.requests.HTTPError("500")
+        success = Mock(status_code=200, content=b"<rss><channel><item><title>Myanmar</title></item></channel></rss>")
+        success.raise_for_status.return_value = None
+        with patch.object(app.requests, "get", side_effect=[failed, success]) as get, patch.object(app.time, "sleep"):
+            entries = app.fetch_rss_entries({"name": "test", "url": "https://example.com/feed"})
+        self.assertEqual(get.call_count, 2)
+        self.assertEqual(len(entries), 1)
+
+    def test_article_text_falls_back_to_article_page(self):
+        item = entry("one", "Myanmar news", "short")
+        item.link = "https://example.com/article"
+        html = "<html><nav>menu</nav><article>" + "".join(f"<p>word {i} details</p>" for i in range(60)) + "</article></html>"
+        with patch.object(app, "fetch_article_html", return_value=html):
+            text = app.get_entry_article_text(item)
+        self.assertIn("word 59 details", text)
+        self.assertNotIn("menu", text)
+
     def test_build_x_post_text_is_bounded_and_keeps_url(self):
         text = app.build_x_post_text("題" * 120, "https://example.com/post")
         title, url = text.splitlines()
@@ -89,10 +109,33 @@ class PosterTests(unittest.TestCase):
             save.assert_not_called()
 
     def test_short_body_never_generates(self):
-        with patch.object(app, "load_seen_ids", return_value=set()), patch.object(app, "fetch_rss_entries", return_value=[entry("x", "Myanmar", "Teaser")]), patch.object(app, "call_gemini_generate_content") as generate:
+        with patch.object(app, "load_seen_ids", return_value=set()), patch.object(app, "fetch_rss_entries", return_value=[entry("x", "Myanmar", "Teaser")]), patch.object(app, "fetch_article_html", return_value=None), patch.object(app, "call_gemini_generate_content") as generate:
             with self.assertRaises(RuntimeError):
                 app.main()
             generate.assert_not_called()
+
+
+class ExplainerTests(unittest.TestCase):
+    def test_used_topics_are_excluded(self):
+        remaining = explainer.unused_topics([{"id": "pdf-basics"}])
+        self.assertNotIn("pdf-basics", {topic["id"] for topic in remaining})
+
+    def test_unknown_model_choice_falls_back_to_first_unused(self):
+        history = [{"id": "pdf-basics"}]
+        with patch.object(explainer.news, "call_gemini_generate_content", return_value='{"id":"invented"}'):
+            selected = explainer.select_topic(history, signals=[])
+        self.assertEqual(selected["id"], explainer.unused_topics(history)[0]["id"])
+
+    def test_research_requires_two_distinct_usable_sources(self):
+        topic = {"id": "test", "query": "test", "title": "test"}
+        candidates = [
+            {"domain": "reuters.com", "url": "https://reuters.com/a", "title": "A"},
+            {"domain": "reuters.com", "url": "https://reuters.com/b", "title": "B"},
+        ]
+        page = "<article><p>" + ("word " * 150) + "</p></article>"
+        with patch.object(explainer, "gdelt_candidates", return_value=candidates), patch.object(explainer.news, "fetch_rss_entries", return_value=[]), patch.object(explainer.news, "fetch_article_html", return_value=page):
+            with self.assertRaises(RuntimeError):
+                explainer.fetch_research_sources(topic)
 
 if __name__ == "__main__":
     unittest.main()

@@ -33,7 +33,16 @@ RSS_SOURCES = [
         "url": "https://english.dvb.no/feed/",
         "lang": "en",
     },
-    # 必要ならここに他の RSS 追加
+    {
+        "name": "Myanmar Now (English)",
+        "url": "https://myanmar-now.org/en/feed/",
+        "lang": "en",
+    },
+    {
+        "name": "ReliefWeb Myanmar",
+        "url": "https://reliefweb.int/updates/rss.xml?search=country.exact%3A%22Myanmar%22",
+        "lang": "en",
+    },
 ]
 
 # 日本語版は既存ファイル名をそのまま利用
@@ -84,14 +93,27 @@ def fetch_rss_entries(source: Dict[str, Any]) -> List[Dict[str, Any]]:
     name = source["name"]
     logging.info(f"[INFO] Checking RSS source: {name} ({url})")
 
-    response = requests.get(url, timeout=30)
+    response = None
+    for attempt in range(3):
+        response = requests.get(
+            url,
+            timeout=30,
+            headers={"User-Agent": "MyanmarNewsBot/1.0 (+https://github.com/m15obayasi/MyanmarNews)"},
+        )
+        if response.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
+            break
+        delay = 5 * (2 ** attempt)
+        logging.warning("RSS temporarily unavailable (HTTP %s); retry in %ss", response.status_code, delay)
+        time.sleep(delay)
+    assert response is not None
     response.raise_for_status()
     feed = feedparser.parse(response.content)
-    if getattr(feed, "bozo", False):
-        raise RuntimeError(f"Invalid RSS from {name}")
     entries = getattr(feed, "entries", []) or []
     if not entries:
-        raise RuntimeError(f"RSS from {name} contains no entries")
+        detail = "invalid XML and no entries" if getattr(feed, "bozo", False) else "no entries"
+        raise RuntimeError(f"RSS from {name} contains {detail}")
+    if getattr(feed, "bozo", False):
+        logging.warning("RSS from %s is not perfectly formed, but %s entries were recovered", name, len(entries))
     logging.info(f"[INFO] RSS fetched: {url} / entries = {len(entries)}")
     return entries
 
@@ -158,6 +180,33 @@ def fetch_article_html(url: str) -> Optional[str]:
     except Exception as e:
         logging.warning(f"[WARNING] Error fetching article content: {e}")
         return None
+
+
+def article_html_to_text(html_content: str) -> str:
+    """Extract the article body when possible, avoiding site navigation text."""
+    soup = BeautifulSoup(html_content, "lxml")
+    for tag in soup(["script", "style", "noscript", "nav", "header", "footer", "aside", "form"]):
+        tag.decompose()
+    container = soup.find("article") or soup.find("main")
+    if container is None:
+        container = soup.body or soup
+    paragraphs = [p.get_text(" ", strip=True) for p in container.find_all(["p", "h2", "h3", "li"])]
+    return "\n".join(line for line in paragraphs if line)
+
+
+def get_entry_article_text(entry: Any) -> str:
+    """Prefer RSS content, then fall back to the linked article body."""
+    text = rss_article_text(entry)
+    if len(text.split()) >= 80:
+        return text
+    link = getattr(entry, "link", "")
+    if link:
+        page = fetch_article_html(link)
+        if page:
+            extracted = article_html_to_text(page)
+            if len(extracted.split()) > len(text.split()):
+                return extracted
+    return text
 
 
 def html_to_text(html_content: str) -> str:
@@ -345,7 +394,13 @@ def split_title_and_body_from_gemini(text: str) -> Tuple[str, str]:
 # ===============================
 # はてなブログ投稿
 # ===============================
-def post_to_hatena(title: str, body_md: str, source_link: str, blog_id_env: str = "HATENA_BLOG_ID") -> Optional[str]:
+def post_to_hatena(
+    title: str,
+    body_md: str,
+    source_link: str,
+    blog_id_env: str = "HATENA_BLOG_ID",
+    categories: Optional[List[str]] = None,
+) -> Optional[str]:
     """
     はてなブログに記事を投稿する（AtomPub）。
     content は HTML として送る。
@@ -369,13 +424,20 @@ def post_to_hatena(title: str, body_md: str, source_link: str, blog_id_env: str 
 
     updated = datetime.now(timezone.utc).isoformat()
 
+    category_xml = "\n  ".join(
+        f'<category term="{html.escape(category, quote=True)}" />'
+        for category in (categories or [])
+    )
+    if category_xml:
+        category_xml = "\n  " + category_xml
+
     entry_xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom"
        xmlns:app="http://www.w3.org/2007/app">
   <title>{html.escape(title)}</title>
   <author><name>{html.escape(hatena_id)}</name></author>
   <content type="text/html">{html.escape(body_html)}</content>
-  <updated>{updated}</updated>
+  <updated>{updated}</updated>{category_xml}
   <app:control>
     <app:draft>no</app:draft>
   </app:control>
@@ -516,8 +578,14 @@ def main(target_lang: str = "ja") -> None:
     selected_source = None
 
     # 1. RSS から未読記事を 1 本選ぶ
+    source_failures = []
     for source in RSS_SOURCES:
-        entries = fetch_rss_entries(source)
+        try:
+            entries = fetch_rss_entries(source)
+        except Exception as exc:
+            source_failures.append(f"{source['name']}: {exc}")
+            logging.warning("[WARNING] Skipping unavailable RSS source %s: %s", source["name"], exc)
+            continue
         result = choose_new_entry(entries, seen_ids)
         if result is None:
             continue
@@ -528,6 +596,8 @@ def main(target_lang: str = "ja") -> None:
         break
 
     if not selected_entry:
+        if len(source_failures) == len(RSS_SOURCES):
+            raise RuntimeError("All RSS sources failed: " + "; ".join(source_failures))
         logging.info("[INFO] No new articles found in all RSS sources. Exit.")
         return
 
@@ -537,7 +607,7 @@ def main(target_lang: str = "ja") -> None:
     )
 
     # DVB publishes article content in RSS; avoid site navigation and paywalls.
-    article_text = rss_article_text(selected_entry)
+    article_text = get_entry_article_text(selected_entry)
     if len(article_text.split()) < 80:
         raise RuntimeError("RSS article text is too short for reliable generation")
     logging.info("Myanmar-related selection: %s; RSS article words: %s",

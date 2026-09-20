@@ -1,12 +1,13 @@
-name: Daily Myanmar News Digest
+name: Daily Myanmar Explainer
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    # 10:15 JST. GitHub schedules use UTC and may start a little late.
+    - cron: "15 1 * * *"
   workflow_dispatch:
     inputs:
-      diagnose:
-        description: "Check connections without publishing (uses Gemini API)"
+      dry_run:
+        description: "Generate and validate without publishing"
         type: boolean
         default: true
 
@@ -18,9 +19,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  run-script:
+  publish-explainer:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -29,16 +30,14 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install --requirement requirements.txt
-      - name: Run both languages
-        id: post
+      - name: Generate source-grounded explainer
         env:
-          DIAGNOSE: ${{ inputs.diagnose }}
+          DRY_RUN: ${{ inputs.dry_run }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
           HATENA_ID: ${{ secrets.HATENA_ID }}
           HATENA_API_KEY: ${{ secrets.HATENA_API_KEY }}
           HATENA_BLOG_ID: ${{ secrets.HATENA_BLOG_ID }}
-          HATENA_BLOG_ID_EN: ${{ secrets.HATENA_BLOG_ID_EN }}
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
@@ -46,27 +45,18 @@ jobs:
         shell: bash
         run: |
           args=()
-          if [[ "$DIAGNOSE" == "true" ]]; then args+=(--diagnose); fi
-          status=0
-          for lang in ja en; do
-            if python main.py --lang "$lang" "${args[@]}"; then
-              echo "$lang: completed" >> "$GITHUB_STEP_SUMMARY"
-            else
-              echo "$lang: failed; inspect logs" >> "$GITHUB_STEP_SUMMARY"
-              status=1
-            fi
-          done
-          exit "$status"
-      - name: Save successful posts
-        if: ${{ !cancelled() && steps.post.outcome != 'skipped' && inputs.diagnose != true }}
+          if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
+          python explainer.py "${args[@]}"
+      - name: Save published topic history
+        if: ${{ !cancelled() && inputs.dry_run != true }}
         shell: bash
         run: |
           git config user.name github-actions
           git config user.email actions@github.com
-          git add seen_articles.json seen_articles_en.json
+          git add explainer_topics.json
           if git diff --cached --quiet; then
-            echo "No seen-article change."
+            echo "No topic history change."
           else
-            git commit -m "Update seen_articles.json (ja/en)"
+            git commit -m "Record published explainer topic"
             git push
           fi
