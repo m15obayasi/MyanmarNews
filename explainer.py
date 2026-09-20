@@ -287,6 +287,7 @@ def build_explainer_prompt(topic: Dict[str, str], sources: List[Dict[str, str]])
 - 現在進行中の政治・軍事情勢は「～と報じられている」「～は～と主張している」など帰属を明示し、断定しすぎない。
 - 独立系メディア、当事者、国際機関の記述を区別し、食い違いがあれば併記する。
 - 2つ以上の異なる情報源を本文中でMarkdownリンクとして示す。単一情報源だけで重要な主張を確定しない。
+- 資料ごとに扱う範囲が違う場合、単独資料にしかない詳細は省くか「同媒体によると」と明示した補足にとどめ、複数資料で確認できる共通部分を記事の軸にする。単独資料の詳細を省けば記事化できる場合はSKIPしない。
 - 原文の長い引用や翻訳転載はせず、自分の言葉で要約する。
 - 日本の一般読者向けに略語と背景を説明する。
 - 1行目をタイトル、2行目以降をMarkdown本文とする。
@@ -307,7 +308,8 @@ def run(dry_run: bool = False) -> Dict[str, Any]:
     sources = fetch_research_sources(topic)
     output = news.call_gemini_generate_content(build_explainer_prompt(topic, sources))
     if output.lstrip().upper().startswith("SKIP:"):
-        raise RuntimeError("Gemini declined publication because the collected sources were insufficient: " + output[:300])
+        logging.warning("Publication skipped safely because the collected sources were insufficient: %s", output[:500])
+        return {"topic": topic, "sources": sources, "article_url": None, "skipped": output[:500]}
     title, body = news.split_title_and_body_from_gemini(output)
     if len(body) < 800:
         raise RuntimeError("Generated explainer is unexpectedly short")
