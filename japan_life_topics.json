@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "id": "residence-card-loss",
+    "topic_ja": "在留カードをなくしたとき",
+    "title": "နေထိုင်ခွင့်ကတ်ပြား (在留カード - Zairyū Kādo) ပျောက်ဆုံးသွားသည့်အခါ လုပ်ဆောင်ရမည့်အရာများ",
+    "published_at": "2026-09-21T02:14:24.081775+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032080542714",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "紛失等による在留カードの再交付申請",
+        "url": "https://www.moj.go.jp/isa/applications/procedures/nyuukokukanri10_00010.html"
+      },
+      {
+        "title": "在留カードに関するQ&A",
+        "url": "https://www.moj.go.jp/isa/publications/faq/newimmiact_4_q-and-a_page2.html"
+      }
+    ]
+  }
+]
