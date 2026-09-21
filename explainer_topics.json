@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "conscription",
+    "topic": "ミャンマーの徴兵制度とは？",
+    "published_at": "2026-09-21T01:41:46.534151+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032080531273",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "NUG reports 139 killed by airstrikes across Myanmar in August; Forced recruitment in Rakhine State",
+        "url": "https://english.dvb.no/nug-reports-139-killed-by-airstrikes-across-myanmar-in-august-forced-recruitment-in-rakhine-state/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Fears of deportation put Myanmar workers at risk of exploitation in Thailand, say experts",
+        "url": "https://myanmar-now.org/en/news/fears-of-deportation-put-myanmar-workers-at-risk-of-exploitation-in-thailand-say-experts/"
+      }
+    ]
+  }
+]
