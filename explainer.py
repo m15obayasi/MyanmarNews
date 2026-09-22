@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote_plus
 
@@ -17,6 +17,8 @@ import main as news
 
 TOPIC_HISTORY_FILE = "explainer_topics.json"
 GDELT_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc"
+MAX_TOPIC_ATTEMPTS = 5
+SKIP_COOLDOWN_DAYS = 14
 
 # These are deliberately bounded.  The model chooses among unused editorially safe
 # candidates instead of inventing a potentially duplicative or unsuitable topic.
@@ -71,9 +73,29 @@ def save_history(history: List[Dict[str, Any]], path: str = TOPIC_HISTORY_FILE) 
         json.dump(history, handle, ensure_ascii=False, indent=2)
 
 
-def unused_topics(history: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-    used = {str(item.get("id", "")) for item in history}
-    return [topic for topic in TOPICS if topic["id"] not in used]
+def unused_topics(
+    history: List[Dict[str, Any]],
+    now: Optional[datetime] = None,
+) -> List[Dict[str, str]]:
+    """Exclude published topics forever and recently skipped topics temporarily."""
+    now = now or datetime.now(timezone.utc)
+    published = {
+        str(item.get("id", ""))
+        for item in history
+        if item.get("status") == "published" or item.get("published_at") or item.get("article_url")
+    }
+    cooling_down = set()
+    for item in history:
+        if item.get("status") != "skipped" or not item.get("retry_after"):
+            continue
+        try:
+            retry_after = datetime.fromisoformat(str(item["retry_after"]).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if retry_after > now:
+            cooling_down.add(str(item.get("id", "")))
+    unavailable = published | cooling_down
+    return [topic for topic in TOPICS if topic["id"] not in unavailable]
 
 
 def recent_news_titles(limit: int = 30) -> List[str]:
@@ -125,6 +147,43 @@ def select_topic(history: List[Dict[str, Any]], signals: Optional[List[str]] = N
     except Exception as exc:
         logging.warning("Topic selection model failed; using first unused curated topic: %s", exc)
         return candidates[0]
+
+
+def topic_attempt_order(
+    history: List[Dict[str, Any]],
+    signals: Optional[List[str]] = None,
+    limit: int = MAX_TOPIC_ATTEMPTS,
+) -> List[Dict[str, str]]:
+    """Put the editor-selected topic first, followed by other eligible fallbacks."""
+    candidates = unused_topics(history)
+    if not candidates:
+        return []
+    preferred = select_topic(history, signals=signals)
+    ordered = [preferred]
+    ordered.extend(topic for topic in candidates if topic["id"] != preferred["id"])
+    return ordered[:limit]
+
+
+class InsufficientSourcesError(RuntimeError):
+    def __init__(self, topic_id: str, available: int):
+        self.topic_id = topic_id
+        self.available = available
+        super().__init__(
+            f"Only {available} usable trusted source(s) found for {topic_id}; at least 2 are required"
+        )
+
+
+def skipped_record(topic: Dict[str, str], reason: str, source_count: int) -> Dict[str, Any]:
+    skipped_at = datetime.now(timezone.utc)
+    return {
+        "id": topic["id"],
+        "topic": topic["title"],
+        "status": "skipped",
+        "skipped_at": skipped_at.isoformat(),
+        "retry_after": (skipped_at + timedelta(days=SKIP_COOLDOWN_DAYS)).isoformat(),
+        "reason": reason[:500],
+        "source_count": source_count,
+    }
 
 
 def domain_is_trusted(domain: str) -> bool:
@@ -263,9 +322,7 @@ def fetch_research_sources(topic: Dict[str, str], limit: int = 5) -> List[Dict[s
         if len(results) >= limit:
             break
     if len(results) < 2:
-        raise RuntimeError(
-            f"Only {len(results)} usable trusted source(s) found for {topic['id']}; at least 2 are required"
-        )
+        raise InsufficientSourcesError(topic["id"], len(results))
     return results
 
 
@@ -303,40 +360,81 @@ def build_explainer_prompt(topic: Dict[str, str], sources: List[Dict[str, str]])
 
 def run(dry_run: bool = False) -> Dict[str, Any]:
     history = load_history()
-    topic = select_topic(history)
-    logging.info("Selected explainer topic: %s", topic["title"])
-    sources = fetch_research_sources(topic)
-    output = news.call_gemini_generate_content(build_explainer_prompt(topic, sources))
-    if output.lstrip().upper().startswith("SKIP:"):
-        logging.warning("Publication skipped safely because the collected sources were insufficient: %s", output[:500])
-        return {"topic": topic, "sources": sources, "article_url": None, "skipped": output[:500]}
-    title, body = news.split_title_and_body_from_gemini(output)
-    if len(body) < 800:
-        raise RuntimeError("Generated explainer is unexpectedly short")
+    topics = topic_attempt_order(history)
+    if not topics:
+        logging.warning("No eligible explainer topics; all are published or in the skip cooldown")
+        return {"article_url": None, "skipped": "no eligible topics", "attempts": []}
 
-    if dry_run:
-        logging.info("Dry run completed; no article was published and history was not changed")
-        return {"topic": topic, "title": title, "sources": sources, "article_url": None}
+    skipped: List[Dict[str, Any]] = []
+    for attempt, topic in enumerate(topics, 1):
+        logging.info(
+            "Trying explainer topic %s/%s: %s",
+            attempt,
+            len(topics),
+            topic["title"],
+        )
+        try:
+            sources = fetch_research_sources(topic)
+        except InsufficientSourcesError as exc:
+            reason = str(exc)
+            logging.warning("Skipping topic and trying the next candidate: %s", reason)
+            skipped.append(skipped_record(topic, reason, exc.available))
+            continue
 
-    article_url = news.post_to_hatena(
-        title,
-        body,
-        "",
-        blog_id_env="HATENA_BLOG_ID",
-        categories=["解説", "ミャンマー"],
+        output = news.call_gemini_generate_content(build_explainer_prompt(topic, sources))
+        if output.lstrip().upper().startswith("SKIP:"):
+            reason = output[:500]
+            logging.warning("Skipping topic after editorial source check: %s", reason)
+            skipped.append(skipped_record(topic, reason, len(sources)))
+            continue
+
+        title, body = news.split_title_and_body_from_gemini(output)
+        if len(body) < 800:
+            reason = "Generated explainer was unexpectedly short"
+            logging.warning("%s; trying the next topic", reason)
+            skipped.append(skipped_record(topic, reason, len(sources)))
+            continue
+
+        if dry_run:
+            logging.info("Dry run completed; no article was published and history was not changed")
+            return {
+                "topic": topic,
+                "title": title,
+                "sources": sources,
+                "article_url": None,
+                "attempts": skipped,
+            }
+
+        article_url = news.post_to_hatena(
+            title,
+            body,
+            "",
+            blog_id_env="HATENA_BLOG_ID",
+            categories=["解説", "ミャンマー"],
+        )
+        record = {
+            "id": topic["id"],
+            "topic": topic["title"],
+            "status": "published",
+            "published_at": datetime.now(timezone.utc).isoformat(),
+            "article_url": article_url,
+            "sources": [{key: item[key] for key in ("publisher", "title", "url")} for item in sources],
+        }
+        history.extend(skipped)
+        history.append(record)
+        save_history(history)
+        if article_url:
+            news.post_to_x_if_configured(title, article_url)
+        return record
+
+    if not dry_run:
+        history.extend(skipped)
+        save_history(history)
+    logging.warning(
+        "No explainer was published after %s candidate(s); finishing successfully with a safe skip",
+        len(skipped),
     )
-    record = {
-        "id": topic["id"],
-        "topic": topic["title"],
-        "published_at": datetime.now(timezone.utc).isoformat(),
-        "article_url": article_url,
-        "sources": [{key: item[key] for key in ("publisher", "title", "url")} for item in sources],
-    }
-    history.append(record)
-    save_history(history)
-    if article_url:
-        news.post_to_x_if_configured(title, article_url)
-    return record
+    return {"article_url": None, "skipped": "all candidate topics lacked sufficient sources", "attempts": skipped}
 
 
 if __name__ == "__main__":

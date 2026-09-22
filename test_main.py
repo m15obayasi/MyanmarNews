@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, Mock
 from feedparser import FeedParserDict as Entry
 import main as app
@@ -118,11 +119,24 @@ class PosterTests(unittest.TestCase):
 
 class ExplainerTests(unittest.TestCase):
     def test_used_topics_are_excluded(self):
-        remaining = explainer.unused_topics([{"id": "pdf-basics"}])
+        remaining = explainer.unused_topics([{"id": "pdf-basics", "published_at": "2026-09-20T00:00:00+00:00"}])
         self.assertNotIn("pdf-basics", {topic["id"] for topic in remaining})
 
+    def test_recent_skip_has_cooldown_but_expired_skip_is_eligible(self):
+        now = datetime(2026, 9, 22, tzinfo=timezone.utc)
+        recent = [{
+            "id": "nug-basics", "status": "skipped",
+            "retry_after": (now + timedelta(days=1)).isoformat(),
+        }]
+        expired = [{
+            "id": "nug-basics", "status": "skipped",
+            "retry_after": (now - timedelta(days=1)).isoformat(),
+        }]
+        self.assertNotIn("nug-basics", {topic["id"] for topic in explainer.unused_topics(recent, now)})
+        self.assertIn("nug-basics", {topic["id"] for topic in explainer.unused_topics(expired, now)})
+
     def test_unknown_model_choice_falls_back_to_first_unused(self):
-        history = [{"id": "pdf-basics"}]
+        history = [{"id": "pdf-basics", "status": "published"}]
         with patch.object(explainer.news, "call_gemini_generate_content", return_value='{"id":"invented"}'):
             selected = explainer.select_topic(history, signals=[])
         self.assertEqual(selected["id"], explainer.unused_topics(history)[0]["id"])
@@ -140,6 +154,31 @@ class ExplainerTests(unittest.TestCase):
         with patch.object(explainer.requests, "get", return_value=empty), patch.object(explainer, "gdelt_candidates", return_value=candidates), patch.object(explainer.news, "fetch_rss_entries", return_value=[]), patch.object(explainer.news, "fetch_article_html", return_value=page):
             with self.assertRaises(RuntimeError):
                 explainer.fetch_research_sources(topic)
+
+    def test_run_tries_next_topic_after_source_shortage(self):
+        topics = [explainer.TOPICS[0], explainer.TOPICS[1]]
+        sources = [
+            {"publisher": "one.example", "title": "One", "url": "https://one.example/a", "excerpt": "a"},
+            {"publisher": "two.example", "title": "Two", "url": "https://two.example/b", "excerpt": "b"},
+        ]
+        generated = "Title\n" + ("本文" * 500)
+        with patch.object(explainer, "load_history", return_value=[]), patch.object(explainer, "topic_attempt_order", return_value=topics), patch.object(explainer, "fetch_research_sources", side_effect=[explainer.InsufficientSourcesError(topics[0]["id"], 1), sources]), patch.object(explainer.news, "call_gemini_generate_content", return_value=generated), patch.object(explainer.news, "post_to_hatena", return_value="https://example.com/post") as post, patch.object(explainer.news, "post_to_x_if_configured"), patch.object(explainer, "save_history") as save:
+            result = explainer.run()
+        self.assertEqual(result["id"], topics[1]["id"])
+        post.assert_called_once()
+        saved = save.call_args.args[0]
+        self.assertEqual(saved[0]["status"], "skipped")
+        self.assertEqual(saved[1]["status"], "published")
+
+    def test_all_source_shortages_finish_successfully_and_record_cooldowns(self):
+        topics = [explainer.TOPICS[0], explainer.TOPICS[1]]
+        failures = [explainer.InsufficientSourcesError(topic["id"], 1) for topic in topics]
+        with patch.object(explainer, "load_history", return_value=[]), patch.object(explainer, "topic_attempt_order", return_value=topics), patch.object(explainer, "fetch_research_sources", side_effect=failures), patch.object(explainer.news, "post_to_hatena") as post, patch.object(explainer, "save_history") as save:
+            result = explainer.run()
+        self.assertIsNone(result["article_url"])
+        self.assertEqual(len(result["attempts"]), 2)
+        post.assert_not_called()
+        self.assertEqual(len(save.call_args.args[0]), 2)
 
 
 class JapanLifeTests(unittest.TestCase):
