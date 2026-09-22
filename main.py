@@ -269,7 +269,21 @@ def call_gemini_generate_content(prompt: str) -> str:
     logging.info(f"[INFO] Calling Gemini REST API (model={model}) ...")
 
     for attempt in range(3):
-        resp = requests.post(url, headers=headers, json=payload, timeout=60)
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=90)
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            if attempt == 2:
+                logging.error("[ERROR] Gemini request failed after 3 attempts: %s", exc)
+                raise
+            delay = 10 * (2 ** attempt)
+            logging.warning(
+                "Gemini connection temporarily failed (%s); retry in %ss (attempt %s/3)",
+                type(exc).__name__,
+                delay,
+                attempt + 1,
+            )
+            time.sleep(delay)
+            continue
         if resp.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
             break
         delay = 10 * (2 ** attempt)

@@ -73,6 +73,24 @@ class PosterTests(unittest.TestCase):
                     app.call_gemini_generate_content("test")
                 post.assert_called_once()
 
+    def test_gemini_retries_transient_connection_failures(self):
+        success = Mock(status_code=200)
+        success.json.return_value = {"candidates": [{"content": {"parts": [{"text": "OK"}]}}]}
+        with patch.dict(app.os.environ, {"GEMINI_API_KEY": "test"}), patch.object(app.time, "sleep") as sleep:
+            with patch.object(
+                app.requests,
+                "post",
+                side_effect=[app.requests.ReadTimeout("slow"), success],
+            ) as post:
+                self.assertEqual(app.call_gemini_generate_content("test"), "OK")
+                self.assertEqual(post.call_count, 2)
+                sleep.assert_called_once_with(10)
+
+            with patch.object(app.requests, "post", side_effect=app.requests.ConnectionError("offline")) as post:
+                with self.assertRaises(app.requests.ConnectionError):
+                    app.call_gemini_generate_content("test")
+                self.assertEqual(post.call_count, 3)
+
     def test_related_before_newer_world_news(self):
         world = entry("world", "Philippines election")
         related = entry("related", "Myanmar peace talks")
