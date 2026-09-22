@@ -216,13 +216,33 @@ class JapanLifeTests(unittest.TestCase):
         self.assertIn("在留カード", excerpt)
 
     def test_article_validation_requires_myanmar_text_length_and_source(self):
-        valid_body = "မြန်မာဘာသာ " * 100 + "\nhttps://www.moj.go.jp/"
+        headings = "\n\n".join([
+            "## အချက်အလက်အကျဉ်း",
+            "## လုပ်ဆောင်ရမည့် အဆင့်များ",
+            "## လိုအပ်သော စာရွက်စာတမ်းများ",
+            "## သတိပြုရန်အချက်များ",
+            "## ဆက်သွယ်မေးမြန်းရန်",
+            "## အရင်းအမြစ်များ",
+        ])
+        valid_body = headings + "\n" + ("မြန်မာဘာသာ " * 100) + "\nhttps://www.moj.go.jp/"
         japan_life.validate_article("ဂျပန်တွင် နေထိုင်ခြင်း", valid_body)
         with self.assertRaises(RuntimeError):
             japan_life.validate_article("Japanese title", "x" * 1000 + " https://example.com")
+        with self.assertRaisesRegex(RuntimeError, "section headings"):
+            japan_life.validate_article(
+                "ဂျပန်တွင် နေထိုင်ခြင်း",
+                ("မြန်မာဘာသာ " * 100) + "\nhttps://www.moj.go.jp/",
+            )
 
     def test_dry_run_never_posts_or_changes_history(self):
-        generated = "ဂျပန်တွင် နေထိုင်ခြင်း\n" + ("မြန်မာဘာသာ " * 100) + "\nhttps://www.moj.go.jp/"
+        generated = "ဂျပန်တွင် နေထိုင်ခြင်း\n" + "\n\n".join([
+            "## အချက်အလက်အကျဉ်း",
+            "## လုပ်ဆောင်ရမည့် အဆင့်များ",
+            "## လိုအပ်သော စာရွက်စာတမ်းများ",
+            "## သတိပြုရန်အချက်များ",
+            "## ဆက်သွယ်မေးမြန်းရန်",
+            "## အရင်းအမြစ်များ",
+        ]) + "\n" + ("မြန်မာဘာသာ " * 100) + "\nhttps://www.moj.go.jp/"
         sources = [{"title": "Official", "url": "https://www.moj.go.jp/", "excerpt": "x" * 500}]
         with patch.object(japan_life, "load_history", return_value=[]), patch.object(japan_life, "collect_sources", return_value=sources), patch.object(japan_life.news, "call_gemini_generate_content", return_value=generated), patch.object(japan_life.news, "post_to_hatena") as post, patch.object(japan_life, "save_history") as save:
             result = japan_life.run(dry_run=True, topic_id="residence-card-loss")

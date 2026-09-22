@@ -239,8 +239,15 @@ def build_prompt(topic: Dict[str, Any], sources: List[Dict[str, str]]) -> str:
 - 医療・法律・税務の個別判断はせず、緊急時や判断が必要な場合は公的窓口や専門家への確認を促す。
 - 原文の長い引用や翻訳転載はせず、自分の言葉で実用的に要約する。
 - 1行目を記事タイトル、2行目以降をMarkdown本文にする。
-- 本文は1200～2200字程度。最初に短い要点、その後に番号付きの手順、必要なもの、注意点、問い合わせ先の順で構成する。
-- 末尾にミャンマー語の「အရင်းအမြစ်များ」見出しを置き、使用した全資料を資料名とMarkdownリンクで示す。
+- 本文は1200～2200字程度。各セクションの間に空行を入れ、次の小見出しをこの順序で必ず使う。
+  `## အချက်အလက်အကျဉ်း`
+  `## လုပ်ဆောင်ရမည့် အဆင့်များ`
+  `## လိုအပ်သော စာရွက်စာတမ်းများ`
+  `## သတိပြုရန်အချက်များ`
+  `## ဆက်သွယ်မေးမြန်းရန်`
+  `## အရင်းအမြစ်များ`
+- 小見出しは太字ではなく、必ず行頭の `## ` で始まるMarkdown見出しにする。各小見出しの直後に本文を書き、手順は番号付きリストにする。
+- 末尾の `## အရင်းအမြစ်များ` には、使用した全資料を資料名とMarkdownリンクで示す。
 - 読者を不安にさせる煽りや、確認できない断定はしない。
 - 資料がテーマを十分に説明していない場合は、記事を書かず `SKIP: 理由` の1行だけを返す。
 
@@ -256,6 +263,11 @@ def validate_article(title: str, body: str) -> None:
         raise RuntimeError("Generated article is unexpectedly short")
     if "http" not in body:
         raise RuntimeError("Generated article does not cite official sources")
+    headings = re.findall(r"(?m)^##\s+\S.*$", body)
+    if len(headings) < 6:
+        raise RuntimeError("Generated article does not contain the required Markdown section headings")
+    if not re.search(r"(?m)^##\s+အရင်းအမြစ်များ\s*$", body):
+        raise RuntimeError("Generated article does not contain the required sources heading")
 
 
 def diagnose() -> None:
