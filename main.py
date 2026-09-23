@@ -4,6 +4,7 @@ import logging
 import traceback
 import html
 import re
+import random
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -238,7 +239,14 @@ def get_gemini_model_name() -> str:
     return default_model
 
 
-def call_gemini_generate_content(prompt: str) -> str:
+def _gemini_retry_delay(attempt: int) -> float:
+    """Return a spaced exponential-backoff delay with a small jitter."""
+    base_delays = (30, 120)
+    base = base_delays[min(attempt, len(base_delays) - 1)]
+    return base + random.uniform(0, 10)
+
+
+def call_gemini_generate_content(prompt: str, thinking_budget: int = 1024) -> str:
     """
     Gemini API (v1beta) を REST で叩いてテキストを返す。
     """
@@ -246,11 +254,9 @@ def call_gemini_generate_content(prompt: str) -> str:
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set in environment variables.")
 
-    model = get_gemini_model_name()
-
+    primary_model = get_gemini_model_name()
+    fallback_model = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash-lite").strip()
     base_url = "https://generativelanguage.googleapis.com/v1beta"
-    url = f"{base_url}/models/{model}:generateContent"
-
     payload = {
         "contents": [
             {
@@ -258,7 +264,12 @@ def call_gemini_generate_content(prompt: str) -> str:
                     {"text": prompt}
                 ]
             }
-        ]
+        ],
+        "generationConfig": {
+            "thinkingConfig": {
+                "thinkingBudget": thinking_budget,
+            }
+        },
     }
 
     headers = {
@@ -266,50 +277,94 @@ def call_gemini_generate_content(prompt: str) -> str:
         "x-goog-api-key": api_key,
     }
 
-    logging.info(f"[INFO] Calling Gemini REST API (model={model}) ...")
+    models = [(primary_model, 3)]
+    if fallback_model and fallback_model != primary_model:
+        models.append((fallback_model, 1))
 
-    for attempt in range(3):
-        try:
-            resp = requests.post(url, headers=headers, json=payload, timeout=90)
-        except (requests.Timeout, requests.ConnectionError) as exc:
-            if attempt == 2:
-                logging.error("[ERROR] Gemini request failed after 3 attempts: %s", exc)
+    transient_statuses = {408, 429, 500, 502, 503, 504}
+    for model_index, (model, max_attempts) in enumerate(models):
+        url = f"{base_url}/models/{model}:generateContent"
+        logging.info(
+            "[INFO] Calling Gemini REST API (model=%s, thinking_budget=%s) ...",
+            model,
+            thinking_budget,
+        )
+        model_exception = None
+        model_response = None
+
+        for attempt in range(max_attempts):
+            try:
+                model_response = requests.post(url, headers=headers, json=payload, timeout=90)
+                model_exception = None
+            except (requests.Timeout, requests.ConnectionError) as exc:
+                model_exception = exc
+                if attempt < max_attempts - 1:
+                    delay = _gemini_retry_delay(attempt)
+                    logging.warning(
+                        "Gemini connection temporarily failed (%s); retry in %.1fs (attempt %s/%s)",
+                        type(exc).__name__,
+                        delay,
+                        attempt + 1,
+                        max_attempts,
+                    )
+                    time.sleep(delay)
+                    continue
+                break
+
+            if model_response.status_code in transient_statuses:
+                if attempt < max_attempts - 1:
+                    delay = _gemini_retry_delay(attempt)
+                    logging.warning(
+                        "Gemini temporarily unavailable (HTTP %s); retry in %.1fs (attempt %s/%s)",
+                        model_response.status_code,
+                        delay,
+                        attempt + 1,
+                        max_attempts,
+                    )
+                    time.sleep(delay)
+                    continue
+                break
+
+            try:
+                model_response.raise_for_status()
+            except Exception:
+                logging.error("[ERROR] Gemini HTTP error: %s", model_response.status_code)
                 raise
-            delay = 10 * (2 ** attempt)
+
+            data = model_response.json()
+            candidates = data.get("candidates", [])
+            if not candidates:
+                raise RuntimeError("Gemini response has no candidates.")
+
+            content = candidates[0].get("content", {})
+            parts = content.get("parts", [])
+            if not parts:
+                raise RuntimeError("Gemini response has no parts in content.")
+
+            text = "".join(part.get("text", "") for part in parts)
+            if not text.strip():
+                raise RuntimeError("Gemini response text is empty.")
+            return text.strip()
+
+        can_fallback = (
+            model_index < len(models) - 1
+            and (model_response is None or model_response.status_code != 429)
+        )
+        if can_fallback:
             logging.warning(
-                "Gemini connection temporarily failed (%s); retry in %ss (attempt %s/3)",
-                type(exc).__name__,
-                delay,
-                attempt + 1,
+                "Primary Gemini model remained unavailable; trying fallback model %s once",
+                models[model_index + 1][0],
             )
-            time.sleep(delay)
             continue
-        if resp.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
-            break
-        delay = 10 * (2 ** attempt)
-        logging.warning("Gemini temporarily unavailable (HTTP %s); retry in %ss", resp.status_code, delay)
-        time.sleep(delay)
-    try:
-        resp.raise_for_status()
-    except Exception:
-        logging.error(f"[ERROR] Gemini HTTP error: {resp.status_code}")
-        raise
 
-    data = resp.json()
-    candidates = data.get("candidates", [])
-    if not candidates:
-        raise RuntimeError("Gemini response has no candidates.")
+        if model_exception is not None:
+            logging.error("[ERROR] Gemini request failed after all attempts: %s", model_exception)
+            raise model_exception
+        if model_response is not None:
+            logging.error("[ERROR] Gemini HTTP error after all attempts: %s", model_response.status_code)
+            model_response.raise_for_status()
 
-    content = candidates[0].get("content", {})
-    parts = content.get("parts", [])
-    if not parts:
-        raise RuntimeError("Gemini response has no parts in content.")
-
-    text = "".join(part.get("text", "") for part in parts)
-    if not text.strip():
-        raise RuntimeError("Gemini response text is empty.")
-
-    return text.strip()
+    raise RuntimeError("Gemini request failed without a response")
 
 
 def build_prompt_for_article(

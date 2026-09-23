@@ -58,14 +58,15 @@ class PosterTests(unittest.TestCase):
         unavailable.raise_for_status.side_effect = app.requests.HTTPError("503")
         success = Mock(status_code=200)
         success.json.return_value = {"candidates": [{"content": {"parts": [{"text": "OK"}]}}]}
-        with patch.dict(app.os.environ, {"GEMINI_API_KEY": "test"}), patch.object(app.time, "sleep") as sleep:
+        with patch.dict(app.os.environ, {"GEMINI_API_KEY": "test"}), patch.object(app.time, "sleep") as sleep, patch.object(app.random, "uniform", return_value=0):
             with patch.object(app.requests, "post", side_effect=[unavailable, success]) as post:
                 self.assertEqual(app.call_gemini_generate_content("test"), "OK")
                 self.assertEqual(post.call_count, 2)
             with patch.object(app.requests, "post", return_value=unavailable) as post:
                 with self.assertRaises(app.requests.HTTPError):
                     app.call_gemini_generate_content("test")
-                self.assertEqual(post.call_count, 3)
+                self.assertEqual(post.call_count, 4)
+                self.assertIn("gemini-2.5-flash-lite", post.call_args.args[0])
             forbidden = Mock(status_code=403)
             forbidden.raise_for_status.side_effect = app.requests.HTTPError("403")
             with patch.object(app.requests, "post", return_value=forbidden) as post:
@@ -73,10 +74,21 @@ class PosterTests(unittest.TestCase):
                     app.call_gemini_generate_content("test")
                 post.assert_called_once()
 
+            quota = Mock(status_code=429)
+            quota.raise_for_status.side_effect = app.requests.HTTPError("429")
+            with patch.object(app.requests, "post", return_value=quota) as post:
+                with self.assertRaises(app.requests.HTTPError):
+                    app.call_gemini_generate_content("test")
+                self.assertEqual(post.call_count, 3)
+
+            self.assertEqual(sleep.call_args_list[0].args, (30,))
+            payload = post.call_args.kwargs["json"]
+            self.assertEqual(payload["generationConfig"]["thinkingConfig"]["thinkingBudget"], 1024)
+
     def test_gemini_retries_transient_connection_failures(self):
         success = Mock(status_code=200)
         success.json.return_value = {"candidates": [{"content": {"parts": [{"text": "OK"}]}}]}
-        with patch.dict(app.os.environ, {"GEMINI_API_KEY": "test"}), patch.object(app.time, "sleep") as sleep:
+        with patch.dict(app.os.environ, {"GEMINI_API_KEY": "test"}), patch.object(app.time, "sleep") as sleep, patch.object(app.random, "uniform", return_value=0):
             with patch.object(
                 app.requests,
                 "post",
@@ -84,12 +96,31 @@ class PosterTests(unittest.TestCase):
             ) as post:
                 self.assertEqual(app.call_gemini_generate_content("test"), "OK")
                 self.assertEqual(post.call_count, 2)
-                sleep.assert_called_once_with(10)
+                sleep.assert_called_once_with(30)
 
             with patch.object(app.requests, "post", side_effect=app.requests.ConnectionError("offline")) as post:
                 with self.assertRaises(app.requests.ConnectionError):
                     app.call_gemini_generate_content("test")
-                self.assertEqual(post.call_count, 3)
+                self.assertEqual(post.call_count, 4)
+
+    def test_gemini_uses_fallback_model_after_primary_outage(self):
+        unavailable = Mock(status_code=503)
+        unavailable.raise_for_status.side_effect = app.requests.HTTPError("503")
+        success = Mock(status_code=200)
+        success.json.return_value = {"candidates": [{"content": {"parts": [{"text": "fallback OK"}]}}]}
+        env = {
+            "GEMINI_API_KEY": "test",
+            "GEMINI_MODEL": "gemini-2.5-flash",
+            "GEMINI_FALLBACK_MODEL": "gemini-2.5-flash-lite",
+        }
+        with patch.dict(app.os.environ, env, clear=True), patch.object(app.time, "sleep"), patch.object(app.random, "uniform", return_value=0), patch.object(
+            app.requests,
+            "post",
+            side_effect=[unavailable, unavailable, unavailable, success],
+        ) as post:
+            self.assertEqual(app.call_gemini_generate_content("test"), "fallback OK")
+        self.assertEqual(post.call_count, 4)
+        self.assertIn("gemini-2.5-flash-lite", post.call_args.args[0])
 
     def test_related_before_newer_world_news(self):
         world = entry("world", "Philippines election")

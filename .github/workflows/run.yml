@@ -35,6 +35,7 @@ jobs:
           DIAGNOSE: ${{ inputs.diagnose }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-2.5-flash
+          GEMINI_FALLBACK_MODEL: gemini-2.5-flash-lite
           HATENA_ID: ${{ secrets.HATENA_ID }}
           HATENA_API_KEY: ${{ secrets.HATENA_API_KEY }}
           HATENA_BLOG_ID: ${{ secrets.HATENA_BLOG_ID }}
