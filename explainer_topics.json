@@ -16,5 +16,24 @@
         "url": "https://myanmar-now.org/en/news/fears-of-deportation-put-myanmar-workers-at-risk-of-exploitation-in-thailand-say-experts/"
       }
     ]
+  },
+  {
+    "id": "aa-basics",
+    "topic": "アラカン軍（AA）とは？",
+    "status": "published",
+    "published_at": "2026-09-23T01:34:52.045667+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032081268172",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Airstrikes hit four towns in Rakhine State as military ‘Operation 4926’ falters",
+        "url": "https://english.dvb.no/airstrikes-hit-four-towns-in-rakhine-state-as-military-operation-4926-falters/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Myanmar junta airstrike kills 14 in Rakhine State’s Thandwe Township",
+        "url": "https://myanmar-now.org/en/news/myanmar-junta-airstrike-kills-14-in-rakhine-states-thandwe-township/"
+      }
+    ]
   }
 ]
