@@ -463,6 +463,40 @@ def split_title_and_body_from_gemini(text: str) -> Tuple[str, str]:
 # ===============================
 # はてなブログ投稿
 # ===============================
+def _hatena_entry_xml(
+    title: str,
+    body_md: str,
+    source_link: str,
+    hatena_id: str,
+    categories: Optional[List[str]] = None,
+) -> bytes:
+    """Build the Atom entry used for both creating and replacing a post."""
+    body_html = markdown.markdown(body_md)
+    if source_link:
+        body_html += f'<hr><p>Source: <a href="{html.escape(source_link)}">{html.escape(source_link)}</a></p>'
+
+    category_xml = "\n  ".join(
+        f'<category term="{html.escape(category, quote=True)}" />'
+        for category in (categories or [])
+    )
+    if category_xml:
+        category_xml = "\n  " + category_xml
+
+    entry_xml = f"""<?xml version="1.0" encoding="utf-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom"
+       xmlns:app="http://www.w3.org/2007/app">
+  <title>{html.escape(title)}</title>
+  <author><name>{html.escape(hatena_id)}</name></author>
+  <content type="text/html">{html.escape(body_html)}</content>
+  <updated>{datetime.now(timezone.utc).isoformat()}</updated>{category_xml}
+  <app:control>
+    <app:draft>no</app:draft>
+  </app:control>
+</entry>
+""".strip()
+    return entry_xml.encode("utf-8")
+
+
 def post_to_hatena(
     title: str,
     body_md: str,
@@ -484,40 +518,17 @@ def post_to_hatena(
 
     endpoint = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry"
 
-    # Markdown → HTML
-    body_html = markdown.markdown(body_md)
-
-    # 元記事リンクを最後に付与
-    if source_link:
-        body_html += f'<hr><p>Source: <a href="{html.escape(source_link)}">{html.escape(source_link)}</a></p>'
-
-    updated = datetime.now(timezone.utc).isoformat()
-
-    category_xml = "\n  ".join(
-        f'<category term="{html.escape(category, quote=True)}" />'
-        for category in (categories or [])
-    )
-    if category_xml:
-        category_xml = "\n  " + category_xml
-
-    entry_xml = f"""<?xml version="1.0" encoding="utf-8"?>
-<entry xmlns="http://www.w3.org/2005/Atom"
-       xmlns:app="http://www.w3.org/2007/app">
-  <title>{html.escape(title)}</title>
-  <author><name>{html.escape(hatena_id)}</name></author>
-  <content type="text/html">{html.escape(body_html)}</content>
-  <updated>{updated}</updated>{category_xml}
-  <app:control>
-    <app:draft>no</app:draft>
-  </app:control>
-</entry>
-""".strip()
-
     auth = (hatena_id, api_key)
     headers = {"Content-Type": "application/xml"}
 
     logging.info(f"[INFO] Posting article to Hatena Blog ({blog_id_env}={blog_id}) ...")
-    resp = requests.post(endpoint, data=entry_xml.encode("utf-8"), headers=headers, auth=auth, timeout=30)
+    resp = requests.post(
+        endpoint,
+        data=_hatena_entry_xml(title, body_md, source_link, hatena_id, categories),
+        headers=headers,
+        auth=auth,
+        timeout=30,
+    )
     try:
         resp.raise_for_status()
     except Exception:
@@ -538,6 +549,42 @@ def post_to_hatena(
         pass
     logging.warning("[WARNING] Hatena response did not include the published article URL; skipping X post.")
     return None
+
+
+def update_hatena(
+    entry_url: str,
+    title: str,
+    body_md: str,
+    source_link: str,
+    blog_id_env: str = "HATENA_BLOG_ID",
+    categories: Optional[List[str]] = None,
+) -> str:
+    """Replace an existing Hatena entry through its Atom edit URL."""
+    hatena_id = os.getenv("HATENA_ID")
+    api_key = os.getenv("HATENA_API_KEY")
+    blog_id = os.getenv(blog_id_env)
+    if not hatena_id or not api_key or not blog_id:
+        raise RuntimeError(f"HATENA_ID / HATENA_API_KEY / {blog_id_env} が設定されていません。")
+
+    expected_prefix = f"https://blog.hatena.ne.jp/{hatena_id}/{blog_id}/atom/entry/"
+    if not entry_url.startswith(expected_prefix):
+        raise RuntimeError("Refusing to update an entry outside the configured Hatena blog")
+
+    logging.info(f"[INFO] Replacing existing Hatena Blog article ({entry_url}) ...")
+    response = requests.put(
+        entry_url,
+        data=_hatena_entry_xml(title, body_md, source_link, hatena_id, categories),
+        headers={"Content-Type": "application/xml"},
+        auth=(hatena_id, api_key),
+        timeout=30,
+    )
+    try:
+        response.raise_for_status()
+    except Exception:
+        logging.error(f"[ERROR] Hatena Blog update failed: {response.status_code} {response.text}")
+        raise
+    logging.info("[INFO] Hatena Blog article replacement success.")
+    return entry_url
 
 
 def build_x_post_text(title: str, article_url: str) -> str:

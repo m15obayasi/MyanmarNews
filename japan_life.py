@@ -147,13 +147,17 @@ def save_history(history: List[Dict[str, Any]], path: str = TOPIC_HISTORY_FILE) 
         json.dump(history, handle, ensure_ascii=False, indent=2)
 
 
-def select_topic(history: List[Dict[str, Any]], requested_id: Optional[str] = None) -> Dict[str, Any]:
+def select_topic(
+    history: List[Dict[str, Any]],
+    requested_id: Optional[str] = None,
+    allow_used: bool = False,
+) -> Dict[str, Any]:
     used = {str(item.get("id", "")) for item in history}
     if requested_id:
         topic = next((item for item in TOPICS if item["id"] == requested_id), None)
         if not topic:
             raise RuntimeError(f"Unknown topic id: {requested_id}")
-        if requested_id in used:
+        if requested_id in used and not allow_used:
             raise RuntimeError(f"Topic has already been published: {requested_id}")
         return topic
     topic = next((item for item in TOPICS if item["id"] not in used), None)
@@ -233,6 +237,7 @@ def build_prompt(topic: Dict[str, Any], sources: List[Dict[str, str]]) -> str:
 
 編集ルール:
 - 本文と見出しは自然で分かりやすいミャンマー語にする。
+- タイトルも必ずミャンマー語にする。日本語は制度名・固有名詞・資料名を補足するときだけ使い、説明文を日本語で書かない。
 - 手続で必要になる重要な日本語は「在留カード（ざいりゅうカード）」のように、日本語表記と読み方を併記する。
 - 下記の日本政府・公的機関の資料だけを根拠にし、資料にない期限、金額、対象者、必要書類を推測しない。
 - 自治体や個人の状況で違う事項は、その違いと確認先を明記する。
@@ -257,8 +262,14 @@ def build_prompt(topic: Dict[str, Any], sources: List[Dict[str, str]]) -> str:
 
 
 def validate_article(title: str, body: str) -> None:
-    if not re.search(r"[\u1000-\u109f]", title + body):
-        raise RuntimeError("Generated article does not contain Myanmar text")
+    title_myanmar = len(re.findall(r"[\u1000-\u109f]", title))
+    title_japanese = len(re.findall(r"[\u3040-\u30ff\u3400-\u9fff]", title))
+    body_myanmar = len(re.findall(r"[\u1000-\u109f]", body))
+    body_japanese = len(re.findall(r"[\u3040-\u30ff\u3400-\u9fff]", body))
+    if title_myanmar < 4 or title_myanmar <= title_japanese:
+        raise RuntimeError("Generated title is not primarily in Myanmar language")
+    if body_myanmar < 500 or body_myanmar < body_japanese * 1.5:
+        raise RuntimeError("Generated body is not primarily in Myanmar language")
     if len(body) < 900:
         raise RuntimeError("Generated article is unexpectedly short")
     if "http" not in body:
@@ -282,29 +293,68 @@ def diagnose() -> None:
     logging.info("Diagnostics passed. No article posted.")
 
 
-def run(dry_run: bool = False, topic_id: Optional[str] = None) -> Dict[str, Any]:
+def generate_valid_article(topic: Dict[str, Any], sources: List[Dict[str, str]]) -> tuple[str, str]:
+    prompt = build_prompt(topic, sources)
+    last_error: Optional[Exception] = None
+    for attempt in range(2):
+        current_prompt = prompt
+        if attempt:
+            current_prompt = (
+                "前回の出力は日本語が多すぎたため不合格でした。タイトル、本文、説明、箇条書きを"
+                "ミャンマー語で書き、日本語は制度名・固有名詞・資料名の補足だけに限定してください。\n\n"
+                + prompt
+            )
+        output = news.call_gemini_generate_content(current_prompt)
+        if output.lstrip().upper().startswith("SKIP:"):
+            raise RuntimeError(f"Publication skipped safely: {output[:500]}")
+        title, body = news.split_title_and_body_from_gemini(output)
+        try:
+            validate_article(title, body)
+            return title, body
+        except RuntimeError as exc:
+            last_error = exc
+            logging.warning("Generated Japan-life article failed validation (attempt %s/2): %s", attempt + 1, exc)
+    raise RuntimeError(f"Could not generate a Myanmar-language article after 2 attempts: {last_error}")
+
+
+def run(
+    dry_run: bool = False,
+    topic_id: Optional[str] = None,
+    replace_existing: bool = False,
+) -> Dict[str, Any]:
     os.environ.setdefault(BLOG_ID_ENV, DEFAULT_BLOG_ID)
     history = load_history()
-    topic = select_topic(history, topic_id)
+    if replace_existing and not topic_id:
+        raise RuntimeError("--replace-existing requires --topic")
+    topic = select_topic(history, topic_id, allow_used=replace_existing)
+    existing_index = next((index for index, item in enumerate(history) if item.get("id") == topic["id"]), None)
+    if replace_existing and existing_index is None:
+        raise RuntimeError(f"Cannot replace unpublished topic: {topic['id']}")
     logging.info("Selected Japan-life topic: %s", topic["title_ja"])
     sources = collect_sources(topic)
-    output = news.call_gemini_generate_content(build_prompt(topic, sources))
-    if output.lstrip().upper().startswith("SKIP:"):
-        logging.warning("Publication skipped safely: %s", output[:500])
-        return {"topic": topic, "article_url": None, "skipped": output[:500]}
-    title, body = news.split_title_and_body_from_gemini(output)
-    validate_article(title, body)
+    title, body = generate_valid_article(topic, sources)
     if dry_run:
         logging.info("Dry run completed; no article was published and history was not changed")
         return {"topic": topic, "title": title, "body": body, "article_url": None}
 
-    article_url = news.post_to_hatena(
-        title,
-        body,
-        "",
-        blog_id_env=BLOG_ID_ENV,
-        categories=["ဂျပန်တွင် နေထိုင်မှု"],
-    )
+    categories = ["ဂျပန်တွင် နေထိုင်မှု"]
+    if replace_existing:
+        article_url = news.update_hatena(
+            history[existing_index]["article_url"],
+            title,
+            body,
+            "",
+            blog_id_env=BLOG_ID_ENV,
+            categories=categories,
+        )
+    else:
+        article_url = news.post_to_hatena(
+            title,
+            body,
+            "",
+            blog_id_env=BLOG_ID_ENV,
+            categories=categories,
+        )
     record = {
         "id": topic["id"],
         "topic_ja": topic["title_ja"],
@@ -313,7 +363,10 @@ def run(dry_run: bool = False, topic_id: Optional[str] = None) -> Dict[str, Any]
         "article_url": article_url,
         "sources": [{"title": item["title"], "url": item["url"]} for item in sources],
     }
-    history.append(record)
+    if replace_existing:
+        history[existing_index] = record
+    else:
+        history.append(record)
     save_history(history)
     return record
 
@@ -323,8 +376,9 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", action="store_true", help="Generate and validate without publishing")
     parser.add_argument("--diagnose", action="store_true", help="Check Gemini and Hatena without publishing")
     parser.add_argument("--topic", help="Use one unpublished curated topic id")
+    parser.add_argument("--replace-existing", action="store_true", help="Replace the existing post for --topic")
     arguments = parser.parse_args()
     if arguments.diagnose:
         diagnose()
     else:
-        run(dry_run=arguments.dry_run, topic_id=arguments.topic)
+        run(dry_run=arguments.dry_run, topic_id=arguments.topic, replace_existing=arguments.replace_existing)

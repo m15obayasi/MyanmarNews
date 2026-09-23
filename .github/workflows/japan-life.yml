@@ -14,6 +14,10 @@ on:
         description: "Optional curated topic id"
         type: string
         required: false
+      replace_existing:
+        description: "Replace the existing post for this topic"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -38,6 +42,7 @@ jobs:
         env:
           DRY_RUN: ${{ inputs.dry_run }}
           TOPIC: ${{ inputs.topic }}
+          REPLACE_EXISTING: ${{ inputs.replace_existing }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-2.5-flash
           GEMINI_FALLBACK_MODEL: gemini-2.5-flash-lite
@@ -49,6 +54,7 @@ jobs:
           args=()
           if [[ "$DRY_RUN" == "true" ]]; then args+=(--dry-run); fi
           if [[ -n "$TOPIC" ]]; then args+=(--topic "$TOPIC"); fi
+          if [[ "$REPLACE_EXISTING" == "true" ]]; then args+=(--replace-existing); fi
           python japan_life.py "${args[@]}"
       - name: Save published topic history
         if: ${{ !cancelled() && inputs.dry_run != true }}

@@ -265,6 +265,38 @@ class JapanLifeTests(unittest.TestCase):
                 ("မြန်မာဘာသာ " * 100) + "\nhttps://www.moj.go.jp/",
             )
 
+    def test_article_validation_rejects_japanese_body_with_myanmar_headings(self):
+        headings = "\n\n".join([
+            "## အချက်အလက်အကျဉ်း",
+            "## လုပ်ဆောင်ရမည့် အဆင့်များ",
+            "## လိုအပ်သော စာရွက်စာတမ်းများ",
+            "## သတိပြုရန်အချက်များ",
+            "## ဆက်သွယ်မေးမြန်းရန်",
+            "## အရင်းအမြစ်များ",
+        ])
+        japanese_body = headings + "\n" + ("これは日本語で書かれた説明文です。" * 100) + "\nhttps://www.moj.go.jp/"
+        with self.assertRaisesRegex(RuntimeError, "body is not primarily"):
+            japan_life.validate_article("မြန်မာဘာသာ ခေါင်းစဉ်", japanese_body)
+
+    def test_replace_existing_updates_without_duplicate_post(self):
+        generated = "မြန်မာဘာသာ ခေါင်းစဉ်\n" + "\n\n".join([
+            "## အချက်အလက်အကျဉ်း",
+            "## လုပ်ဆောင်ရမည့် အဆင့်များ",
+            "## လိုအပ်သော စာရွက်စာတမ်းများ",
+            "## သတိပြုရန်အချက်များ",
+            "## ဆက်သွယ်မေးမြန်းရန်",
+            "## အရင်းအမြစ်များ",
+        ]) + "\n" + ("မြန်မာဘာသာ အကြောင်းအရာ " * 100) + "\nhttps://www.moj.go.jp/"
+        existing_url = "https://blog.hatena.ne.jp/test/myanmar-japan-info.hatenablog.com/atom/entry/123"
+        history = [{"id": "health-insurance", "article_url": existing_url}]
+        sources = [{"title": "Official", "url": "https://www.moj.go.jp/", "excerpt": "x" * 500}]
+        with patch.object(japan_life, "load_history", return_value=history), patch.object(japan_life, "collect_sources", return_value=sources), patch.object(japan_life.news, "call_gemini_generate_content", return_value=generated), patch.object(japan_life.news, "update_hatena", return_value=existing_url) as update, patch.object(japan_life.news, "post_to_hatena") as post, patch.object(japan_life, "save_history") as save:
+            result = japan_life.run(topic_id="health-insurance", replace_existing=True)
+        self.assertEqual(result["article_url"], existing_url)
+        update.assert_called_once()
+        post.assert_not_called()
+        self.assertEqual(len(save.call_args.args[0]), 1)
+
     def test_dry_run_never_posts_or_changes_history(self):
         generated = "ဂျပန်တွင် နေထိုင်ခြင်း\n" + "\n\n".join([
             "## အချက်အလက်အကျဉ်း",
