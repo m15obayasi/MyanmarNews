@@ -36,5 +36,26 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "health-insurance",
+    "topic_ja": "国民健康保険と会社の健康保険の基本",
+    "title": "日本の医療保険について知っておくべきこと：国民健康保険と会社の健康保険",
+    "published_at": "2026-09-23T03:58:49.168177+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032081321767",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "国民健康保険の外国人被保険者について",
+        "url": "https://www.mhlw.go.jp/stf/newpage_21895.html"
+      },
+      {
+        "title": "外国人従業員を雇用したときの手続き",
+        "url": "https://www.nenkin.go.jp/service/kounen/tekiyo/hihokensha1/gaikokujinkoyou.html"
+      }
+    ]
   }
 ]
