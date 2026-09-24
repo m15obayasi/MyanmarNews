@@ -57,5 +57,26 @@
         "url": "https://www.nenkin.go.jp/service/kounen/tekiyo/hihokensha1/gaikokujinkoyou.html"
       }
     ]
+  },
+  {
+    "id": "public-pension",
+    "topic_ja": "日本の公的年金の基本",
+    "title": "ဂျပန်နိုင်ငံ၏ ပြည်သူ့ပင်စင်စနစ် အခြေခံများ",
+    "published_at": "2026-09-24T02:12:12.622569+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032081733119",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人のみなさまへ 年金に関する情報",
+        "url": "https://www.nenkin.go.jp/tokusetsu/forresidents.html"
+      },
+      {
+        "title": "知っておきたい年金のはなし（外国語版）",
+        "url": "https://www.nenkin.go.jp/service/learn/shitteokitai_gaikoku.html"
+      }
+    ]
   }
 ]
