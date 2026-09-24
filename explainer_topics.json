@@ -35,5 +35,24 @@
         "url": "https://myanmar-now.org/en/news/myanmar-junta-airstrike-kills-14-in-rakhine-states-thandwe-township/"
       }
     ]
+  },
+  {
+    "id": "rakhine-importance",
+    "topic": "なぜラカイン州は重要なのか？",
+    "status": "published",
+    "published_at": "2026-09-24T01:35:21.460332+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032081722105",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Securing China’s strategic interests in Myanmar by engineering an internal coup?",
+        "url": "https://english.dvb.no/securing-chinas-strategic-interests-in-myanmar-by-engineering-an-internal-coup/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Escalating Myanmar junta airstrikes kill dozens across Kachin, Rakhine, southern Shan states",
+        "url": "https://myanmar-now.org/en/news/escalating-myanmar-junta-airstrikes-kill-dozens-across-kachin-rakhine-southern-shan-states/"
+      }
+    ]
   }
 ]
