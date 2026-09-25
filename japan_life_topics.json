@@ -78,5 +78,26 @@
         "url": "https://www.nenkin.go.jp/service/learn/shitteokitai_gaikoku.html"
       }
     ]
+  },
+  {
+    "id": "visit-hospital",
+    "topic_ja": "日本で病院に行くときの流れ",
+    "title": "ဂျပန်နိုင်ငံတွင် ဆေးရုံတက်ရောက်ရန် လုပ်ငန်းအဆင့်ဆင့်",
+    "published_at": "2026-09-25T02:13:24.430618+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032082129930",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人向け多言語説明資料",
+        "url": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/kokusai/setsumei-ml.html"
+      },
+      {
+        "title": "国民健康保険の外国人被保険者について",
+        "url": "https://www.mhlw.go.jp/stf/newpage_21895.html"
+      }
+    ]
   }
 ]
