@@ -54,5 +54,24 @@
         "url": "https://myanmar-now.org/en/news/escalating-myanmar-junta-airstrikes-kill-dozens-across-kachin-rakhine-southern-shan-states/"
       }
     ]
+  },
+  {
+    "id": "airstrikes",
+    "topic": "なぜミャンマー内戦で空爆が重要なのか？",
+    "status": "published",
+    "published_at": "2026-09-25T01:34:14.203072+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032082118494",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Myanmar regime rejects Time magazine interview; Bangladesh’s 5-point plan for Rohingya refugees",
+        "url": "https://english.dvb.no/myanmar-regime-rejects-time-magazine-interview-bangladeshs-5-point-plan-for-rohingya-refugees/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Human rights in Myanmar hitting a ‘new low’: UN",
+        "url": "https://myanmar-now.org/en/news/human-rights-in-myanmar-hitting-a-new-low-un/"
+      }
+    ]
   }
 ]
