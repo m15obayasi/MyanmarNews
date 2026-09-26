@@ -73,5 +73,24 @@
         "url": "https://myanmar-now.org/en/news/human-rights-in-myanmar-hitting-a-new-low-un/"
       }
     ]
+  },
+  {
+    "id": "online-scams",
+    "topic": "ミャンマー国境地帯の特殊詐欺拠点とは？",
+    "status": "published",
+    "published_at": "2026-09-26T01:33:36.878898+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032082517136",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Cambodia says no online scam compounds remain, experts skeptical",
+        "url": "https://english.dvb.no/cambodia-says-no-online-scam-compounds-remain-experts-skeptical/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "EU sanctions kingpin, Myanmar armed group over cyberscams",
+        "url": "https://myanmar-now.org/en/news/eu-sanctions-kingpin-myanmar-armed-group-over-cyberscams/"
+      }
+    ]
   }
 ]
