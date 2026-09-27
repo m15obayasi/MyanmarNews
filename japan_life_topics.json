@@ -120,5 +120,22 @@
         "url": "https://www.bousai.go.jp/kyoiku/gaikoku/index.html"
       }
     ]
+  },
+  {
+    "id": "emergency-numbers",
+    "topic_ja": "110番と119番の違いと伝え方",
+    "title": "ဂျပန်နိုင်ငံတွင် ၁၁၀ နှင့် ၁၁၉ သို့ ဖုန်းခေါ်ဆိုခြင်း- ကွာခြားချက်များနှင့် ဆက်သွယ်ပြောဆိုပုံ",
+    "published_at": "2026-09-27T02:14:36.095487+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032082923231",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
