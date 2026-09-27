@@ -92,5 +92,24 @@
         "url": "https://myanmar-now.org/en/news/eu-sanctions-kingpin-myanmar-armed-group-over-cyberscams/"
       }
     ]
+  },
+  {
+    "id": "displacement",
+    "topic": "ミャンマーの国内避難民とは？",
+    "status": "published",
+    "published_at": "2026-09-27T01:42:07.454082+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032082909373",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "A letter to Malaysian Prime Minister Anwar Ibrahim from Myanmar",
+        "url": "https://english.dvb.no/a-letter-to-malaysian-prime-minister-anwar-ibrahim-from-myanmar/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Myanmar military escalating aerial attacks on civilians: UN probe",
+        "url": "https://myanmar-now.org/en/news/myanmar-military-escalating-aerial-attacks-on-civilians-un-probe/"
+      }
+    ]
   }
 ]
