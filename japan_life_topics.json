@@ -137,5 +137,22 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "garbage-rules",
+    "topic_ja": "ごみの分け方と出し方",
+    "title": "ဂျပန်နိုင်ငံတွင် အမှိုက်ခွဲခြားနည်းနှင့် စွန့်ပစ်နည်း",
+    "published_at": "2026-09-28T02:19:22.519198+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032083353099",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
