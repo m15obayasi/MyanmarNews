@@ -111,5 +111,33 @@
         "url": "https://myanmar-now.org/en/news/myanmar-military-escalating-aerial-attacks-on-civilians-un-probe/"
       }
     ]
+  },
+  {
+    "id": "nug-basics",
+    "topic": "ミャンマーのNUGとは？",
+    "status": "skipped",
+    "skipped_at": "2026-09-28T01:45:59.920343+00:00",
+    "retry_after": "2026-10-12T01:45:59.920343+00:00",
+    "reason": "Only 1 usable trusted source(s) found for nug-basics; at least 2 are required",
+    "source_count": 1
+  },
+  {
+    "id": "pdf-basics",
+    "topic": "ミャンマーのPDFとは？",
+    "status": "published",
+    "published_at": "2026-09-28T01:46:44.402379+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032083342365",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Military outpost ‘seized’ by People’s Defense Force in Mandalay’s Mogok",
+        "url": "https://english.dvb.no/national-unity-government-states-peoples-defense-force-seizes-military-outpost-in-mandalays-mogok-town/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "KNLA, resistance groups assault junta offices in Kawkareik",
+        "url": "https://myanmar-now.org/en/news/knla-resistance-groups-assault-junta-offices-in-kawkareik/"
+      }
+    ]
   }
 ]
