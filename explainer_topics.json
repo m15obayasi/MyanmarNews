@@ -139,5 +139,24 @@
         "url": "https://myanmar-now.org/en/news/knla-resistance-groups-assault-junta-offices-in-kawkareik/"
       }
     ]
+  },
+  {
+    "id": "rohingya-basics",
+    "topic": "ロヒンギャ問題とは？",
+    "status": "published",
+    "published_at": "2026-09-29T01:41:16.449890+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032083763144",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "A letter to Malaysian Prime Minister Anwar Ibrahim from Myanmar",
+        "url": "https://english.dvb.no/a-letter-to-malaysian-prime-minister-anwar-ibrahim-from-myanmar/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Myanmar Rohingya refugees protest dire conditions in Bangladesh camps",
+        "url": "https://myanmar-now.org/en/news/myanmar-rohingya-refugees-protest-dire-conditions-in-bangladesh-camps/"
+      }
+    ]
   }
 ]
