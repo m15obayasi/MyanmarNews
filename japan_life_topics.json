@@ -154,5 +154,22 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "renting-home",
+    "topic_ja": "日本で賃貸住宅を借りるときの基本",
+    "title": "ဂျပန်တွင် အိမ်ငှားယူခြင်း၏ အခြေခံများ (၂၀၂၆-၀၉-၂၉ အတည်ပြုချက်)",
+    "published_at": "2026-09-29T02:14:24.663981+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032083775801",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
