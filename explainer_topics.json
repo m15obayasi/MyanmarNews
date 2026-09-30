@@ -158,5 +158,24 @@
         "url": "https://myanmar-now.org/en/news/myanmar-rohingya-refugees-protest-dire-conditions-in-bangladesh-camps/"
       }
     ]
+  },
+  {
+    "id": "sagaing-importance",
+    "topic": "なぜザガイン地方域は重要なのか？",
+    "status": "published",
+    "published_at": "2026-09-30T01:44:26.482280+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032084201880",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Resistance forces seize northern Chinland’s Falam Township",
+        "url": "https://english.dvb.no/chin-resistance-forces-seize-falam-township-in-northern-chinland/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Army troops abuse, rob civilian hostages in Mandalay Region",
+        "url": "https://myanmar-now.org/en/news/army-troops-abuse-rob-civilian-hostages-in-mandalay-region/"
+      }
+    ]
   }
 ]
