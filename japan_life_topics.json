@@ -171,5 +171,22 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "work-contract",
+    "topic_ja": "雇用契約書と労働条件通知書の見方",
+    "title": "အလုပ်အကိုင်စာချုပ်နှင့် အလုပ်သမားရေးရာသတ်မှတ်ချက်များ ထုတ်ပြန်စာ (労働条件通知書) ကို ကြည့်ရှုနည်း",
+    "published_at": "2026-09-30T02:17:32.929728+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032084210668",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
