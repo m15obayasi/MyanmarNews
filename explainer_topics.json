@@ -177,5 +177,24 @@
         "url": "https://myanmar-now.org/en/news/army-troops-abuse-rob-civilian-hostages-in-mandalay-region/"
       }
     ]
+  },
+  {
+    "id": "japan-migrants",
+    "topic": "日本でミャンマー人が増えているのはなぜ？",
+    "status": "published",
+    "published_at": "2026-10-01T01:48:17.227294+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032084580070",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Myanmar regime targets returning migrants with conscription pledge",
+        "url": "https://english.dvb.no/myanmar-regime-targets-returning-migrants-with-conscription-pledge/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Beyond the Headlines: Myanmar nationals detained in India, Thailand",
+        "url": "https://myanmar-now.org/en/news/beyond-the-headlines-myanmar-nationals-detained-in-india-thailand/"
+      }
+    ]
   }
 ]
