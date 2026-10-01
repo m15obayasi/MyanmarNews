@@ -188,5 +188,22 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "salary-slip",
+    "topic_ja": "給与明細の見方",
+    "title": "ဂျပန်တွင် လုပ်ခလစာဖြတ်ပိုင်း (給与明細) ကြည့်ရှုနည်း",
+    "published_at": "2026-10-01T02:22:14.254820+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032084589224",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
