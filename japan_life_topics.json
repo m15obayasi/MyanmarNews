@@ -205,5 +205,22 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "resident-tax",
+    "topic_ja": "住民税とは何か",
+    "title": "ဂျပန်နိုင်ငံတွင် နေထိုင်သည့် မြန်မာနိုင်ငံသားများအတွက် ဂျပန်နိုင်ငံ နေထိုင်မှုဆိုင်ရာ သတင်းအချက်အလက်များ (၂၀၂၆ ခုနှစ်၊ အောက်တိုဘာလ ၂ ရက်)",
+    "published_at": "2026-10-02T02:16:03.090271+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032085017690",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
