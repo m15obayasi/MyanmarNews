@@ -196,5 +196,24 @@
         "url": "https://myanmar-now.org/en/news/beyond-the-headlines-myanmar-nationals-detained-in-india-thailand/"
       }
     ]
+  },
+  {
+    "id": "thailand-relations",
+    "topic": "ミャンマーとタイの関係とは？",
+    "status": "published",
+    "published_at": "2026-10-02T01:41:59.858131+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032085009422",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Malaysia offers to host Min Aung Hlaing over refugee deal; American deported from Myanmar after months in jail",
+        "url": "https://english.dvb.no/malaysia-offers-to-host-min-aung-hlaing-over-refugee-deal-american-deported-from-myanmar-after-months-in-jail/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Suu Kyi’s ICRC meeting is a strategic move by Myanmar’s regime, not a sign of change",
+        "url": "https://myanmar-now.org/en/news/suu-kyis-icrc-meeting-is-a-strategic-move-by-myanmars-regime-not-a-sign-of-change/"
+      }
+    ]
   }
 ]
