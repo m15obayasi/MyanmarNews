@@ -215,5 +215,24 @@
         "url": "https://myanmar-now.org/en/news/suu-kyis-icrc-meeting-is-a-strategic-move-by-myanmars-regime-not-a-sign-of-change/"
       }
     ]
+  },
+  {
+    "id": "eao-basics",
+    "topic": "ミャンマーの少数民族武装組織（EAO）とは？",
+    "status": "published",
+    "published_at": "2026-10-03T01:38:41.170169+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032085441297",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "China Special Envoy meets with regime and EAO leaders",
+        "url": "https://english.dvb.no/chinas-special-envoy-meets-with-regime-and-eao-leaders/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "NCA-signatory EAOs discuss how to prevent further bloodshed by regime",
+        "url": "https://myanmar-now.org/en/news/nca-signatory-eaos-discuss-how-to-prevent-further-bloodshed-by-regime/"
+      }
+    ]
   }
 ]
