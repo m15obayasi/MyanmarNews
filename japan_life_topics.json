@@ -222,5 +222,22 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "bank-account",
+    "topic_ja": "銀行口座を作るときの準備",
+    "title": "ဂျပန်တွင်ဘဏ်စာရင်းဖွင့်ရန် ပြင်ဆင်ခြင်း (2026-10-03 ရက်စွဲအထိ)",
+    "published_at": "2026-10-03T02:12:03.532736+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032085455515",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
