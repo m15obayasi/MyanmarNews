@@ -234,5 +234,42 @@
         "url": "https://myanmar-now.org/en/news/nca-signatory-eaos-discuss-how-to-prevent-further-bloodshed-by-regime/"
       }
     ]
+  },
+  {
+    "id": "asean-role",
+    "topic": "ASEANはミャンマー問題で何をしている？",
+    "status": "skipped",
+    "skipped_at": "2026-10-04T02:15:43.890825+00:00",
+    "retry_after": "2026-10-18T02:15:43.890825+00:00",
+    "reason": "Only 1 usable trusted source(s) found for asean-role; at least 2 are required",
+    "source_count": 1
+  },
+  {
+    "id": "pdf-vs-eao",
+    "topic": "PDFと少数民族武装組織（EAO）の違いは？",
+    "status": "skipped",
+    "skipped_at": "2026-10-04T02:16:22.747598+00:00",
+    "retry_after": "2026-10-18T02:16:22.747598+00:00",
+    "reason": "Only 1 usable trusted source(s) found for pdf-vs-eao; at least 2 are required",
+    "source_count": 1
+  },
+  {
+    "id": "nug-vs-sac",
+    "topic": "NUGと軍政当局（SAC）の違いは？",
+    "status": "published",
+    "published_at": "2026-10-04T02:17:21.402544+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032085904011",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Thailand opposition MP says let ‘refugees’ work; UN states nearly 2.7 million remain displaced in Burma",
+        "url": "https://english.dvb.no/thailand-opposition-mp-says-let-refugees-work-un-states-nearly-2-7-million-remain-displaced-in-burma/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Myanmar junta protests as Timor-Leste hosts NUG official",
+        "url": "https://myanmar-now.org/en/news/myanmar-junta-protests-as-timor-leste-hosts-nug-official/"
+      }
+    ]
   }
 ]
