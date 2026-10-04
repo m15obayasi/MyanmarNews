@@ -239,5 +239,22 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "mobile-phone",
+    "topic_ja": "携帯電話を契約するときの注意点",
+    "title": "ဂျပန်တွင် မိုဘိုင်းလ်ဖုန်းစာချုပ်ချုပ်ဆိုရာတွင် သတိပြုရမည့်အချက်များ",
+    "published_at": "2026-10-04T02:44:03.124325+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032085913721",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
