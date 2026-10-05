@@ -271,5 +271,24 @@
         "url": "https://myanmar-now.org/en/news/myanmar-junta-protests-as-timor-leste-hosts-nug-official/"
       }
     ]
+  },
+  {
+    "id": "kyat-economy",
+    "topic": "ミャンマー・チャットの下落は暮らしにどう影響する？",
+    "status": "published",
+    "published_at": "2026-10-05T01:49:22.671570+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032086302218",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Min Aung Hlaing blames western sanctions for stagnant economy as inflation and currency woes mount",
+        "url": "https://english.dvb.no/min-aung-hlaing-blames-western-sanctions-for-stagnant-economy-as-inflation-and-currency-woes-mount/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Myanmar faces deepening crisis as global oil shock bites",
+        "url": "https://myanmar-now.org/en/news/myanmar-faces-deepening-crisis-as-global-oil-shock-bites/"
+      }
+    ]
   }
 ]
