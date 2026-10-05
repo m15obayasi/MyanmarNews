@@ -256,5 +256,22 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "childbirth-childcare",
+    "topic_ja": "妊娠・出産・子育てで最初に知ること",
+    "title": "ဂျပန်တွင် ကိုယ်ဝန်ဆောင်ခြင်း၊ မွေးဖွားခြင်းနှင့် ကလေးပြုစုစောင့်ရှောက်ခြင်းဆိုင်ရာ အချက်အလက်များ",
+    "published_at": "2026-10-05T02:23:00.170446+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032086311724",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "外国人生活支援ポータルサイト",
+        "url": "https://www.moj.go.jp/isa/support/portal/"
+      }
+    ]
   }
 ]
