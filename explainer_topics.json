@@ -290,5 +290,24 @@
         "url": "https://myanmar-now.org/en/news/myanmar-faces-deepening-crisis-as-global-oil-shock-bites/"
       }
     ]
+  },
+  {
+    "id": "myawaddy-importance",
+    "topic": "なぜミャワディは重要なのか？",
+    "status": "published",
+    "published_at": "2026-10-06T01:41:03.062378+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032086696513",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Global rallies call on Thailand to stop support for Myanmar regime; Min Aung Hlaing to visit Vietnam",
+        "url": "https://english.dvb.no/rallies-call-on-thailand-to-stop-support-for-myanmar-regime-min-aung-hlaing-to-visit-vietnam/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Despite military gains, Myanmar junta struggles to restore border trade",
+        "url": "https://myanmar-now.org/en/news/despite-military-gains-myanmar-junta-struggles-to-restore-border-trade/"
+      }
+    ]
   }
 ]
