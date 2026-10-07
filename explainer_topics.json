@@ -309,5 +309,24 @@
         "url": "https://myanmar-now.org/en/news/despite-military-gains-myanmar-junta-struggles-to-restore-border-trade/"
       }
     ]
+  },
+  {
+    "id": "power-cuts",
+    "topic": "ミャンマーの停電はなぜ続く？",
+    "status": "published",
+    "published_at": "2026-10-07T01:49:15.449073+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032087088702",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Power cuts disrupt water supply in Yangon Region; Thailand urged to assist Myanmar Rohingya refugees",
+        "url": "https://english.dvb.no/power-cuts-disrupt-water-supply-in-yangon-region-thailand-urged-to-assist-myanmar-rohingya-refugees/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Myanmar regime imposes electricity rationing amid severe shortages",
+        "url": "https://myanmar-now.org/en/news/myanmar-regime-imposes-electricity-rationing-amid-severe-shortages/"
+      }
+    ]
   }
 ]
