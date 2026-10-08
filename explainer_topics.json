@@ -328,5 +328,24 @@
         "url": "https://myanmar-now.org/en/news/myanmar-regime-imposes-electricity-rationing-amid-severe-shortages/"
       }
     ]
+  },
+  {
+    "id": "federal-democracy",
+    "topic": "ミャンマーで語られる連邦民主制とは？",
+    "status": "published",
+    "published_at": "2026-10-08T01:47:43.677738+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032087445682",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Airstrikes kill 88 across flood-ravaged regions; Malaysia to repatriate 1,476 Myanmar refugees on September 29",
+        "url": "https://english.dvb.no/airstrikes-kill-88-across-flood-ravaged-regions-malaysia-to-repatriate-1476-myanmar-refugees-on-september-29/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Myanmar’s military dictatorship won’t be around forever",
+        "url": "https://myanmar-now.org/en/news/myanmars-military-dictatorship-wont-be-around-forever/"
+      }
+    ]
   }
 ]
