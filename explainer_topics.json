@@ -347,5 +347,24 @@
         "url": "https://myanmar-now.org/en/news/myanmars-military-dictatorship-wont-be-around-forever/"
       }
     ]
+  },
+  {
+    "id": "japan-aid",
+    "topic": "日本のミャンマー支援は現在どうなっている？",
+    "status": "published",
+    "published_at": "2026-10-09T01:48:53.953149+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032087872269",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "On Suu Kyi’s 81st birthday, Myanmar must prove she is alive",
+        "url": "https://english.dvb.no/on-suu-kyis-81st-birthday-myanmar-must-prove-she-is-alive/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Japan plays a diplomatic double game on rights in Myanmar",
+        "url": "https://myanmar-now.org/en/news/japan-plays-a-diplomatic-double-game-on-rights-in-myanmar/"
+      }
+    ]
   }
 ]
