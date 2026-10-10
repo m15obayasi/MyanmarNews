@@ -366,5 +366,24 @@
         "url": "https://myanmar-now.org/en/news/japan-plays-a-diplomatic-double-game-on-rights-in-myanmar/"
       }
     ]
+  },
+  {
+    "id": "china-relations",
+    "topic": "なぜ中国はミャンマーを重視するのか？",
+    "status": "published",
+    "published_at": "2026-10-10T01:45:12.355062+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032088298844",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "China’s top diplomat visits Myanmar to meet with Min Aung Hlaing",
+        "url": "https://english.dvb.no/chinas-top-diplomat-visits-myanmar-to-meet-with-min-aung-hlaing/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "China navy ships arrive in Myanmar for joint drills",
+        "url": "https://myanmar-now.org/en/news/china-navy-ships-arrive-in-myanmar-for-joint-drills/"
+      }
+    ]
   }
 ]
