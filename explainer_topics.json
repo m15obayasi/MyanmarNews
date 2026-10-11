@@ -385,5 +385,24 @@
         "url": "https://myanmar-now.org/en/news/china-navy-ships-arrive-in-myanmar-for-joint-drills/"
       }
     ]
+  },
+  {
+    "id": "shan-importance",
+    "topic": "なぜシャン州は重要なのか？",
+    "status": "published",
+    "published_at": "2026-10-11T01:47:55.017860+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032088723768",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "How Karenni State established Myanmar’s pioneer ‘bottom-up’ federal governance model",
+        "url": "https://english.dvb.no/how-karenni-state-established-myanmars-pioneer-bottom-up-federal-governance-model/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Despite military gains, Myanmar junta struggles to restore border trade",
+        "url": "https://myanmar-now.org/en/news/despite-military-gains-myanmar-junta-struggles-to-restore-border-trade/"
+      }
+    ]
   }
 ]
