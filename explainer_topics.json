@@ -404,5 +404,33 @@
         "url": "https://myanmar-now.org/en/news/despite-military-gains-myanmar-junta-struggles-to-restore-border-trade/"
       }
     ]
+  },
+  {
+    "id": "nug-basics",
+    "topic": "ミャンマーのNUGとは？",
+    "status": "skipped",
+    "skipped_at": "2026-10-12T01:53:34.150834+00:00",
+    "retry_after": "2026-10-26T01:53:34.150834+00:00",
+    "reason": "Only 1 usable trusted source(s) found for nug-basics; at least 2 are required",
+    "source_count": 1
+  },
+  {
+    "id": "rare-earths",
+    "topic": "ミャンマーのレアアースはなぜ重要？",
+    "status": "published",
+    "published_at": "2026-10-12T01:53:57.235035+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032089167204",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Ray: The Movie premieres in the US; ASEAN Chair expresses concern over 50 killed in Myanmar",
+        "url": "https://english.dvb.no/ray-the-movie-premieres-in-the-us-asean-chair-expresses-concern-over-50-killed-in-myanmar/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Human rights in Myanmar hitting a ‘new low’: UN",
+        "url": "https://myanmar-now.org/en/news/human-rights-in-myanmar-hitting-a-new-low-un/"
+      }
+    ]
   }
 ]
