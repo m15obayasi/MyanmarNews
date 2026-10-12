@@ -320,15 +320,13 @@ class GeneratedJapanLifeTopicsTests(unittest.TestCase):
             {"title": "School", "url": "https://www.mext.go.jp/school.html"},
         ]
         self.candidate = {"title_ja": "子どもの小学校への入学手続き", "keywords": ["学校", "入学", "子ども"],
-                          "source_urls": [self.catalog[1]["url"]]}
+                          "source_urls": [item["url"] for item in self.catalog]}
         self.sources = [{**source, "excerpt": "学校 入学 子ども " * 100} for source in self.catalog]
 
     def generate(self, candidates, verdict, history=None):
         import json
         with patch.object(japan_life, "discover_topic_sources", return_value=self.catalog), \
-                patch.object(japan_life.requests, "get"), \
-                patch.object(japan_life, "_pdf_text", return_value="学校 入学 子ども " * 100), \
-                patch.object(japan_life, "collect_sources", return_value=self.sources) as collect, \
+                patch.object(japan_life, "research_catalog", return_value=self.sources) as collect, \
                 patch.object(japan_life.news, "call_gemini_generate_content", side_effect=[json.dumps({"topics": candidates}), json.dumps(verdict)]):
             return japan_life.generate_topic(history or []), collect.call_count
 
@@ -354,8 +352,7 @@ class GeneratedJapanLifeTopicsTests(unittest.TestCase):
         bad = {**self.candidate, "source_urls": ["https://evil.example/article"]}
         history = [{"topic_ja": self.candidate["title_ja"]}]
         with patch.object(japan_life, "discover_topic_sources", return_value=self.catalog), \
-                patch.object(japan_life.requests, "get"), \
-                patch.object(japan_life, "_pdf_text", return_value="学校"), \
+                patch.object(japan_life, "research_catalog", return_value=self.sources), \
                 patch.object(japan_life, "collect_sources") as collect, \
                 patch.object(japan_life.news, "call_gemini_generate_content", return_value=json.dumps({"topics": [bad, self.candidate]})):
             with self.assertRaisesRegex(RuntimeError, "No non-duplicate"):
@@ -379,6 +376,69 @@ class GeneratedJapanLifeTopicsTests(unittest.TestCase):
                 japan_life.run()
         post.assert_not_called()
         save.assert_not_called()
+
+    def test_blocked_guidebook_does_not_prevent_topic_generation(self):
+        self.sources = [self.sources[1], {"title": "School 2", "url": "https://www.mext.go.jp/school2.html", "excerpt": "学校 入学 子ども " * 100}]
+        self.candidate["source_urls"] = [item["url"] for item in self.sources]
+        topic, _ = self.generate([self.candidate], {"duplicate": False, "supported": True})
+        self.assertNotIn(japan_life.GUIDEBOOK_URL, [source["url"] for source in topic["verified_sources"]])
+
+    def test_lifestyle_allows_media_but_administrative_does_not(self):
+        self.sources = [{"title": "Article", "url": "https://www.watch.impress.co.jp/a.html", "excerpt": "商品 " * 200},
+                        {"title": "Article 2", "url": "https://www.itmedia.co.jp/a.html", "excerpt": "商品 " * 200}]
+        self.candidate.update(kind="lifestyle", title_ja="日本の便利な買い物サービスの使い方", source_urls=[item["url"] for item in self.sources])
+        topic, _ = self.generate([self.candidate], {"duplicate": False, "supported": True, "administrative": False})
+        self.assertEqual(topic["kind"], "lifestyle")
+        with self.assertRaises(japan_life.NoPublishableTopic):
+            self.generate([self.candidate], {"duplicate": False, "supported": True, "administrative": True})
+        self.candidate["kind"] = "administrative"
+        with self.assertRaises(japan_life.NoPublishableTopic):
+            self.generate([self.candidate], {})
+
+    def test_all_sources_unavailable_reports_skip_without_publication(self):
+        with patch.object(japan_life, "load_history", return_value=[]), \
+                patch.object(japan_life, "select_topic", side_effect=japan_life.NoPublishableTopic("Sources blocked")), \
+                patch.object(japan_life.news, "post_to_hatena") as post, \
+                patch.object(japan_life, "save_history") as save, \
+                patch.object(japan_life, "report_result") as report:
+            result = japan_life.run()
+        self.assertEqual(result["status"], "skipped")
+        post.assert_not_called()
+        save.assert_not_called()
+        self.assertIn("未投稿", report.call_args.args[0])
+
+    def test_old_news_is_not_selected_as_a_current_trend(self):
+        for source in self.sources:
+            source["published"] = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        self.candidate["kind"] = "trend"
+        with self.assertRaises(japan_life.NoPublishableTopic):
+            self.generate([self.candidate], {"duplicate": False, "supported": True})
+
+    def test_source_retries_temporary_errors_but_not_forbidden(self):
+        temporary = Mock(status_code=503)
+        forbidden = Mock(status_code=403)
+        forbidden.raise_for_status.side_effect = app.requests.HTTPError("403")
+        with patch.object(japan_life.requests, "get", side_effect=[temporary, forbidden]) as get:
+            with self.assertRaises(app.requests.HTTPError):
+                japan_life.fetch_source(self.catalog[0], [])
+        self.assertEqual(get.call_count, 2)
+        with patch.object(japan_life.requests, "get", return_value=forbidden) as get:
+            with self.assertRaises(app.requests.HTTPError):
+                japan_life.fetch_source(self.catalog[0], [])
+        self.assertEqual(get.call_count, 1)
+
+    def test_unavailable_document_does_not_break_catalog(self):
+        with patch.object(japan_life, "fetch_source", side_effect=[app.requests.HTTPError("403"), self.sources[1]]):
+            result = japan_life.research_catalog(self.catalog)
+        self.assertEqual(result, [self.sources[1]])
+
+    def test_blocked_curated_topic_falls_back_to_another_topic(self):
+        first, second = japan_life.TOPICS[:2]
+        with patch.object(japan_life, "select_topic", side_effect=[first, second]), \
+                patch.object(japan_life, "collect_sources", side_effect=[japan_life.NoPublishableTopic("403"), self.sources]), \
+                patch.object(japan_life, "generate_valid_article", return_value=("title", "body")):
+            topic, _, _, _ = japan_life.prepare_article([])
+        self.assertEqual(topic, second)
 
 
 if __name__ == "__main__":

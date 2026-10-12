@@ -1,6 +1,12 @@
 name: Daily Japan Life Guide in Myanmar
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - japan_life.py
+      - test_main.py
+      - .github/workflows/japan-life.yml
   schedule:
     # 11:00 JST. GitHub schedules use UTC and may start a little late.
     - cron: "0 2 * * *"
@@ -38,9 +44,11 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install --requirement requirements.txt
-      - name: Generate source-grounded Myanmar guide
+      - name: Check publication safeguards
+        run: python -m unittest test_main -q
+      - name: Generate source-grounded Myanmar lifestyle article
         env:
-          DRY_RUN: ${{ inputs.dry_run }}
+          DRY_RUN: ${{ github.event_name == 'push' || inputs.dry_run }}
           TOPIC: ${{ inputs.topic }}
           REPLACE_EXISTING: ${{ inputs.replace_existing }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -57,7 +65,7 @@ jobs:
           if [[ "$REPLACE_EXISTING" == "true" ]]; then args+=(--replace-existing); fi
           python japan_life.py "${args[@]}"
       - name: Save published topic history
-        if: ${{ !cancelled() && inputs.dry_run != true }}
+        if: ${{ !cancelled() && github.event_name != 'push' && inputs.dry_run != true }}
         shell: bash
         run: |
           git config user.name github-actions
