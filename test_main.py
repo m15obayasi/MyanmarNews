@@ -313,6 +313,74 @@ class JapanLifeTests(unittest.TestCase):
         post.assert_not_called()
         save.assert_not_called()
 
+class GeneratedJapanLifeTopicsTests(unittest.TestCase):
+    def setUp(self):
+        self.catalog = [
+            {"title": "Guide", "url": japan_life.GUIDEBOOK_URL},
+            {"title": "School", "url": "https://www.mext.go.jp/school.html"},
+        ]
+        self.candidate = {"title_ja": "子どもの小学校への入学手続き", "keywords": ["学校", "入学", "子ども"],
+                          "source_urls": [self.catalog[1]["url"]]}
+        self.sources = [{**source, "excerpt": "学校 入学 子ども " * 100} for source in self.catalog]
+
+    def generate(self, candidates, verdict, history=None):
+        import json
+        with patch.object(japan_life, "discover_topic_sources", return_value=self.catalog), \
+                patch.object(japan_life.requests, "get"), \
+                patch.object(japan_life, "_pdf_text", return_value="学校 入学 子ども " * 100), \
+                patch.object(japan_life, "collect_sources", return_value=self.sources) as collect, \
+                patch.object(japan_life.news, "call_gemini_generate_content", side_effect=[json.dumps({"topics": candidates}), json.dumps(verdict)]):
+            return japan_life.generate_topic(history or []), collect.call_count
+
+    def test_exhausted_curated_topics_trigger_generation(self):
+        history = [{"id": item["id"]} for item in japan_life.TOPICS]
+        with patch.object(japan_life, "generate_topic", return_value=self.candidate) as generate:
+            self.assertEqual(japan_life.select_topic(history), self.candidate)
+        generate.assert_called_once_with(history)
+
+    def test_supported_new_topic_has_stable_id_and_verified_sources(self):
+        topic, count = self.generate([self.candidate], {"duplicate": False, "supported": True})
+        self.assertTrue(topic["id"].startswith("auto-"))
+        self.assertEqual(topic["verified_sources"], self.sources)
+        self.assertEqual(count, 1)
+
+    def test_semantic_duplicate_or_insufficient_support_never_selected(self):
+        for verdict in ({"duplicate": True, "supported": True}, {"duplicate": False, "supported": False}, {}):
+            with self.subTest(verdict=verdict), self.assertRaisesRegex(RuntimeError, "No non-duplicate"):
+                self.generate([self.candidate], verdict)
+
+    def test_invented_source_and_exact_duplicate_never_researched(self):
+        import json
+        bad = {**self.candidate, "source_urls": ["https://evil.example/article"]}
+        history = [{"topic_ja": self.candidate["title_ja"]}]
+        with patch.object(japan_life, "discover_topic_sources", return_value=self.catalog), \
+                patch.object(japan_life.requests, "get"), \
+                patch.object(japan_life, "_pdf_text", return_value="学校"), \
+                patch.object(japan_life, "collect_sources") as collect, \
+                patch.object(japan_life.news, "call_gemini_generate_content", return_value=json.dumps({"topics": [bad, self.candidate]})):
+            with self.assertRaisesRegex(RuntimeError, "No non-duplicate"):
+                japan_life.generate_topic(history)
+        collect.assert_not_called()
+
+    def test_generated_topic_can_be_selected_for_replacement(self):
+        topic = {**self.candidate, "id": "auto-test"}
+        self.assertEqual(japan_life.select_topic([{"id": "auto-test", "topic": topic}], "auto-test", allow_used=True), topic)
+
+    def test_unverified_citations_never_publish_or_save_history(self):
+        topic = {**self.candidate, "id": "auto-test", "generated": True, "verified_sources": self.sources}
+        headings = "\n\n".join("## " + text for text in ["အချက်အလက်အကျဉ်း", "လုပ်ဆောင်ရမည့် အဆင့်များ", "လိုအပ်သော စာရွက်စာတမ်းများ", "သတိပြုရန်အချက်များ", "ဆက်သွယ်မေးမြန်းရန်", "အရင်းအမြစ်များ"])
+        output = "ဂျပန်တွင် နေထိုင်ခြင်း\n" + headings + "\n" + "မြန်မာဘာသာ " * 100 + "\nhttps://evil.example/invented"
+        with patch.object(japan_life, "load_history", return_value=[]), \
+                patch.object(japan_life, "select_topic", return_value=topic), \
+                patch.object(japan_life.news, "call_gemini_generate_content", return_value=output), \
+                patch.object(japan_life.news, "post_to_hatena") as post, \
+                patch.object(japan_life, "save_history") as save:
+            with self.assertRaisesRegex(RuntimeError, "supplied sources"):
+                japan_life.run()
+        post.assert_not_called()
+        save.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
 
