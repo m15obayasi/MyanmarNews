@@ -273,5 +273,74 @@
         "url": "https://www.moj.go.jp/isa/support/portal/"
       }
     ]
+  },
+  {
+    "id": "auto-428b3659d76cd232",
+    "topic_ja": "日本のレストランやカフェでの注文方法と割引情報（チェーン店を中心に）",
+    "title": "ဂျပန်ရှိ စားသောက်ဆိုင်နှင့် ကော်ဖီဆိုင်များတွင် မှာယူနည်းနှင့် အထူးလျှော့စျေးများ (ဆိုင်ခွဲများအဓိက)",
+    "published_at": "2026-10-13T02:24:42.699198+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032089581037",
+    "sources": [
+      {
+        "title": "ブロンコビリー、平日ディナー限定で全品20％オフ！後日使える最大30％オフのスタンプカードももらえる",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2147507.html"
+      },
+      {
+        "title": "はま寿司、広島県産牡蠣/カキフライつつみなど110円！　塩〆黒そい/炙り豚とろなども登場",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2147493.html"
+      },
+      {
+        "title": "すき家、「ローストポーク丼」100円引き、「Sukiシェイク」30円引きクーポン配信",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2147481.html"
+      },
+      {
+        "title": "ドトール、きのこクリーム×チキンのホットモーニング発売。「パリパリチョコキャラメルミルクレープ」再登場",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2147220.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-428b3659d76cd232",
+      "title_ja": "日本のレストランやカフェでの注文方法と割引情報（チェーン店を中心に）",
+      "keywords": [
+        "レストラン",
+        "カフェ",
+        "クーポン",
+        "割引",
+        "チェーン店",
+        "支払い"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "ブロンコビリー、平日ディナー限定で全品20％オフ！後日使える最大30％オフのスタンプカードももらえる",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2147507.html",
+          "published": "2026-10-13T02:09:57+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-13T02:24:01.049591+00:00"
+        },
+        {
+          "title": "はま寿司、広島県産牡蠣/カキフライつつみなど110円！　塩〆黒そい/炙り豚とろなども登場",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2147493.html",
+          "published": "2026-10-13T01:43:53+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-13T02:24:01.229637+00:00"
+        },
+        {
+          "title": "すき家、「ローストポーク丼」100円引き、「Sukiシェイク」30円引きクーポン配信",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2147481.html",
+          "published": "2026-10-13T01:18:23+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-13T02:24:01.449424+00:00"
+        },
+        {
+          "title": "ドトール、きのこクリーム×チキンのホットモーニング発売。「パリパリチョコキャラメルミルクレープ」再登場",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2147220.html",
+          "published": "2026-10-12T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-13T02:24:01.796529+00:00"
+        }
+      ]
+    }
   }
 ]
