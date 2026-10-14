@@ -342,5 +342,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-28591cc03c9073bc",
+    "topic_ja": "大阪・関西万博と関連イベントの楽しみ方",
+    "title": "大阪・関西万博နှင့် ဆက်စပ်ပွဲများကို ပျော်ရွှင်စွာ ပါဝင်နိုင်မည့် အခွင့်အရေးများ",
+    "published_at": "2026-10-14T02:11:18.625354+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032089974445",
+    "sources": [
+      {
+        "title": "夢洲駅で「ミャクミャク×大阪メトロ」万博1周年フェスタ。花火上映やグッズ販売、10月31日～11月3日",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2147794.html"
+      },
+      {
+        "title": "ハンズ渋谷でEXPO2025のポップアップストア決定！　10月末にはミャクミャクが来店、最終日は渋谷店閉店日",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2147803.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-28591cc03c9073bc",
+      "title_ja": "大阪・関西万博と関連イベントの楽しみ方",
+      "keywords": [
+        "大阪・関西万博",
+        "ミャクミャク",
+        "イベント",
+        "ポップアップストア",
+        "花火"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "夢洲駅で「ミャクミャク×大阪メトロ」万博1周年フェスタ。花火上映やグッズ販売、10月31日～11月3日",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2147794.html",
+          "published": "2026-10-13T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-14T02:09:52.801188+00:00"
+        },
+        {
+          "title": "ハンズ渋谷でEXPO2025のポップアップストア決定！　10月末にはミャクミャクが来店、最終日は渋谷店閉店日",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2147803.html",
+          "published": "2026-10-13T11:07:27+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-14T02:09:52.758866+00:00"
+        }
+      ]
+    }
   }
 ]
