@@ -388,5 +388,57 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-2a043bc15a6ff805",
+    "topic_ja": "日本で働く外国人向けの社会保険制度：年金と健康保険の手続きと脱退一時金",
+    "title": "ဂျပန်နိုင်ငံတွင် အလုပ်လုပ်ကိုင်သော နိုင်ငံခြားသားများအတွက် လူမှုဖူလုံရေးစနစ်- ပင်စင်နှင့် ကျန်းမာရေးအာမခံဆိုင်ရာ လုပ်ထုံးလုပ်နည်းများ၊ နုတ်ထွက်ခြင်းတစ်လုံးတစ်ခဲတည်းပေးငွေ",
+    "published_at": "2026-10-15T02:12:47.515439+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032090393182",
+    "sources": [
+      {
+        "title": "外国人従業員を雇用したときの手続き",
+        "url": "https://www.nenkin.go.jp/service/kounen/tekiyo/hihokensha1/gaikokujinkoyou.html"
+      },
+      {
+        "title": "外国人のみなさまへ 年金に関する情報",
+        "url": "https://www.nenkin.go.jp/tokusetsu/forresidents.html"
+      },
+      {
+        "title": "知っておきたい年金のはなし（外国語版）",
+        "url": "https://www.nenkin.go.jp/service/learn/shitteokitai_gaikoku.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-2a043bc15a6ff805",
+      "title_ja": "日本で働く外国人向けの社会保険制度：年金と健康保険の手続きと脱退一時金",
+      "keywords": [
+        "社会保険",
+        "厚生年金保険",
+        "健康保険",
+        "脱退一時金",
+        "社会保障協定",
+        "外国人従業員"
+      ],
+      "generated": true,
+      "kind": "administrative",
+      "sources": [
+        {
+          "title": "外国人従業員を雇用したときの手続き",
+          "url": "https://www.nenkin.go.jp/service/kounen/tekiyo/hihokensha1/gaikokujinkoyou.html",
+          "fetched_at": "2026-10-15T02:10:46.613568+00:00"
+        },
+        {
+          "title": "外国人のみなさまへ 年金に関する情報",
+          "url": "https://www.nenkin.go.jp/tokusetsu/forresidents.html",
+          "fetched_at": "2026-10-15T02:10:50.330532+00:00"
+        },
+        {
+          "title": "知っておきたい年金のはなし（外国語版）",
+          "url": "https://www.nenkin.go.jp/service/learn/shitteokitai_gaikoku.html",
+          "fetched_at": "2026-10-15T02:10:47.071748+00:00"
+        }
+      ]
+    }
   }
 ]
