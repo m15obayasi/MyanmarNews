@@ -440,5 +440,62 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-d964df3d34d85c00",
+    "topic_ja": "デジタル社会で安全に暮らすためのセキュリティ対策：情報漏えいとフィッシング詐欺から身を守る",
+    "title": "ဒစ်ဂျစ်တယ်ခေတ်တွင် ဘေးကင်းစွာနေထိုင်ရေး- ကိုယ်ရေးအချက်အလက်ပေါက်ကြားခြင်းနှင့် ဖစ်ရှင် (Phishing) လိမ်လည်မှုများမှ မိမိကိုယ်ကို ကာကွယ်ခြင်း",
+    "published_at": "2026-10-16T02:12:07.636004+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032090805408",
+    "sources": [
+      {
+        "title": "情報漏えいは防げなくても、被害は減らせる　個人でできるセキュリティ対策",
+        "url": "https://www.watch.impress.co.jp/docs/topic/2148545.html"
+      },
+      {
+        "title": "「『楽天カード公式』から詐欺メール」報告相次ぐ　ドコモメールに公式マーク付きフィッシング、一部企業の認証設定に脆弱性",
+        "url": "https://www.itmedia.co.jp/news/article/2610/16/2000002314/"
+      },
+      {
+        "title": "「セキュリティソフトも売ってるのに」ソースネクスト会員情報漏えい、パスワード含む最大2252万件　API不正利用される",
+        "url": "https://www.itmedia.co.jp/news/article/2610/16/2000002312/"
+      }
+    ],
+    "topic": {
+      "id": "auto-d964df3d34d85c00",
+      "title_ja": "デジタル社会で安全に暮らすためのセキュリティ対策：情報漏えいとフィッシング詐欺から身を守る",
+      "keywords": [
+        "情報漏えい",
+        "セキュリティ対策",
+        "パスワード",
+        "二段階認証",
+        "フィッシング詐欺"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "情報漏えいは防げなくても、被害は減らせる　個人でできるセキュリティ対策",
+          "url": "https://www.watch.impress.co.jp/docs/topic/2148545.html",
+          "published": "2026-10-15T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-16T02:10:41.250697+00:00"
+        },
+        {
+          "title": "「『楽天カード公式』から詐欺メール」報告相次ぐ　ドコモメールに公式マーク付きフィッシング、一部企業の認証設定に脆弱性",
+          "url": "https://www.itmedia.co.jp/news/article/2610/16/2000002314/",
+          "published": "2026-10-16T01:07:16+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-16T02:10:43.441741+00:00"
+        },
+        {
+          "title": "「セキュリティソフトも売ってるのに」ソースネクスト会員情報漏えい、パスワード含む最大2252万件　API不正利用される",
+          "url": "https://www.itmedia.co.jp/news/article/2610/16/2000002312/",
+          "published": "2026-10-15T22:45:01+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-16T02:10:43.631566+00:00"
+        }
+      ]
+    }
   }
 ]
