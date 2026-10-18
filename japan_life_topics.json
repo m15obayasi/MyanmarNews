@@ -543,5 +543,48 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-f0a3b23e6429f735",
+    "topic_ja": "みなし再入国許可と通常の再入国許可の違いと申請方法",
+    "title": "ဂျပန်မှ ယာယီထွက်ခွာမည့်သူများအတွက် ပြန်လည်ဝင်ရောက်ခွင့် (みなし再入国許可と通常の再入国許可の違いと申請方法)",
+    "published_at": "2026-10-18T02:11:24.361270+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032091718078",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "在留カードに関するQ&A",
+        "url": "https://www.moj.go.jp/isa/publications/faq/newimmiact_4_q-and-a_page2.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-f0a3b23e6429f735",
+      "title_ja": "みなし再入国許可と通常の再入国許可の違いと申請方法",
+      "keywords": [
+        "再入国許可",
+        "みなし再入国許可",
+        "在留資格",
+        "出入国",
+        "手続き",
+        "外国人生活"
+      ],
+      "generated": true,
+      "kind": "administrative",
+      "sources": [
+        {
+          "title": "生活・就労ガイドブック（出入国在留管理庁）",
+          "url": "https://www.moj.go.jp/isa/content/930004717.pdf",
+          "fetched_at": "2026-10-18T02:10:12.059909+00:00"
+        },
+        {
+          "title": "在留カードに関するQ&A",
+          "url": "https://www.moj.go.jp/isa/publications/faq/newimmiact_4_q-and-a_page2.html",
+          "fetched_at": "2026-10-18T02:10:10.449481+00:00"
+        }
+      ]
+    }
   }
 ]
