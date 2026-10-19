@@ -432,5 +432,33 @@
         "url": "https://myanmar-now.org/en/news/human-rights-in-myanmar-hitting-a-new-low-un/"
       }
     ]
+  },
+  {
+    "id": "pdf-vs-eao",
+    "topic": "PDFと少数民族武装組織（EAO）の違いは？",
+    "status": "skipped",
+    "skipped_at": "2026-10-19T01:38:50.565661+00:00",
+    "retry_after": "2026-11-02T01:38:50.565661+00:00",
+    "reason": "Only 1 usable trusted source(s) found for pdf-vs-eao; at least 2 are required",
+    "source_count": 1
+  },
+  {
+    "id": "asean-role",
+    "topic": "ASEANはミャンマー問題で何をしている？",
+    "status": "published",
+    "published_at": "2026-10-19T01:39:20.563970+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032092145437",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "Myanmar resistance condemn Min Aung Hlaing visit as Malaysia pledges ASEAN reintegration",
+        "url": "https://english.dvb.no/myanmar-resistance-leaders-condemn-min-aung-hlaing-visit-as-malaysia-pledges-asean-reintegration/"
+      },
+      {
+        "publisher": "myanmar-now.org",
+        "title": "Myanmar junta leader to visit Malaysia after migrant returns begin",
+        "url": "https://myanmar-now.org/en/news/myanmar-junta-leader-to-visit-malaysia-after-migrant-returns-begin/"
+      }
+    ]
   }
 ]
