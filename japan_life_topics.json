@@ -586,5 +586,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-bbfef513abd63729",
+    "topic_ja": "日本の季節のイベント：ブラックフライデーと冬ギフトの活用術",
+    "title": "ဂျပန်နိုင်ငံ၏ ရာသီအလိုက်ပွဲများ- Black Friday နှင့် ဆောင်းရာသီလက်ဆောင်များကို အကျိုးရှိရှိအသုံးပြုခြင်း",
+    "published_at": "2026-10-19T02:14:13.140766+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032092157132",
+    "sources": [
+      {
+        "title": "ゴディバ、Blackデニム風トートがセットになった「2026 ブラックフライデー ハッピーバッグ」全4種を発売",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2149154.html"
+      },
+      {
+        "title": "ドトール「冬ギフト」宅配なら11月30日まで早割10％オフ。受注焙煎珈琲/飲み比べセットなど数量限定で注文受付",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2148781.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-bbfef513abd63729",
+      "title_ja": "日本の季節のイベント：ブラックフライデーと冬ギフトの活用術",
+      "keywords": [
+        "ブラックフライデー",
+        "ハッピーバッグ",
+        "冬ギフト",
+        "チョコレート",
+        "コーヒー"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "ゴディバ、Blackデニム風トートがセットになった「2026 ブラックフライデー ハッピーバッグ」全4種を発売",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2149154.html",
+          "published": "2026-10-19T02:07:32+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-19T02:13:28.044463+00:00"
+        },
+        {
+          "title": "ドトール「冬ギフト」宅配なら11月30日まで早割10％オフ。受注焙煎珈琲/飲み比べセットなど数量限定で注文受付",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2148781.html",
+          "published": "2026-10-19T00:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-19T02:13:28.437824+00:00"
+        }
+      ]
+    }
   }
 ]
