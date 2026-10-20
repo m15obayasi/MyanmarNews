@@ -632,5 +632,52 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-7be3f435c429de87",
+    "topic_ja": "日本のスマホ決済・コード決済の最新動向と活用方法（Suica/teppay/マイナンバーカード連携）",
+    "title": "ဂျပန်ရှိ စမတ်ဖုန်းငွေပေးချေမှုနှင့် teppay ဝန်ဆောင်မှုအသစ်",
+    "published_at": "2026-10-20T02:13:53.217431+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032092651114",
+    "sources": [
+      {
+        "title": "JR東日本のコード決済「テッペイ」スタート　2万円超え決済などSuica拡張",
+        "url": "https://www.watch.impress.co.jp/docs/news/2149413.html"
+      },
+      {
+        "title": "「Androidのマイナンバーカード」ついにスタート",
+        "url": "https://www.watch.impress.co.jp/docs/news/2149394.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-7be3f435c429de87",
+      "title_ja": "日本のスマホ決済・コード決済の最新動向と活用方法（Suica/teppay/マイナンバーカード連携）",
+      "keywords": [
+        "コード決済",
+        "モバイルSuica",
+        "teppay",
+        "モバイルPASMO",
+        "マイナンバーカード",
+        "スマホ決済"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "JR東日本のコード決済「テッペイ」スタート　2万円超え決済などSuica拡張",
+          "url": "https://www.watch.impress.co.jp/docs/news/2149413.html",
+          "published": "2026-10-20T02:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-20T02:09:45.083096+00:00"
+        },
+        {
+          "title": "「Androidのマイナンバーカード」ついにスタート",
+          "url": "https://www.watch.impress.co.jp/docs/news/2149394.html",
+          "published": "2026-10-20T00:54:44+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-20T02:09:45.114756+00:00"
+        }
+      ]
+    }
   }
 ]
