@@ -679,5 +679,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-aeed41deaacd59af",
+    "topic_ja": "日本のクレジットカード/デビットカードにおけるオフライン決済の仕組みと災害時の活用法",
+    "title": "ဂျပန်ရှိ ခရက်ဒစ်/ဒက်ဘစ်ကတ်များ၏ အော့ဖ်လိုင်းငွေပေးချေမှုစနစ်နှင့် သဘာဝဘေးအန္တရာယ်ကာလတွင် အသုံးပြုပုံများ",
+    "published_at": "2026-10-21T02:12:49.184036+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032093058116",
+    "sources": [
+      {
+        "title": "【鈴木淳也のPay Attention】停電でもカードが使える 「オフライン決済」を義務化する欧州の事情",
+        "url": "https://www.watch.impress.co.jp/docs/series/suzukij/2149447.html"
+      },
+      {
+        "title": "Google Cloud障害で英国が混乱「ATMで引き出せない」「裁判延期」……ロンドン拠点の電源不具合、約8時間にわたり",
+        "url": "https://www.itmedia.co.jp/news/article/2610/21/2000002445/"
+      }
+    ],
+    "topic": {
+      "id": "auto-aeed41deaacd59af",
+      "title_ja": "日本のクレジットカード/デビットカードにおけるオフライン決済の仕組みと災害時の活用法",
+      "keywords": [
+        "Mastercard",
+        "オフライン決済",
+        "決済端末",
+        "サイバー攻撃",
+        "停電"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "【鈴木淳也のPay Attention】停電でもカードが使える 「オフライン決済」を義務化する欧州の事情",
+          "url": "https://www.watch.impress.co.jp/docs/series/suzukij/2149447.html",
+          "published": "2026-10-20T23:20:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-21T02:12:01.355380+00:00"
+        },
+        {
+          "title": "Google Cloud障害で英国が混乱「ATMで引き出せない」「裁判延期」……ロンドン拠点の電源不具合、約8時間にわたり",
+          "url": "https://www.itmedia.co.jp/news/article/2610/21/2000002445/",
+          "published": "2026-10-21T00:32:07+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-21T02:12:03.348359+00:00"
+        }
+      ]
+    }
   }
 ]
