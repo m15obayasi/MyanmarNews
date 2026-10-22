@@ -725,5 +725,52 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-25f6742fcc4f3d24",
+    "topic_ja": "冬に食べたい日本の期間限定グルメ：海老しゃぶ、カニしゃぶ、牡蠣ときのこの天丼",
+    "title": "ဆောင်းရာသီတွင်စားသုံးရန်ဂျပန်၏ကာလအကန့်အသတ်ရှိသောအစားအစာများ- ပုစွန်ရှာဘူ၊ ကဏန်းရှာဘူနှင့် ကမာ၊ မှို တန်ဒွန်",
+    "published_at": "2026-10-22T02:12:46.607516+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032093457996",
+    "sources": [
+      {
+        "title": "ゆず庵、数量限定「有頭 海老しゃぶ」「本ずわいがに かにしゃぶ」を発売。冬限定の「濃厚海老だし」も登場",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2150236.html"
+      },
+      {
+        "title": "天丼はま田、瀬戸内産牡蠣ときのこを贅沢に盛った「牡蠣ときのこの天丼」を発売",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2150224.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-25f6742fcc4f3d24",
+      "title_ja": "冬に食べたい日本の期間限定グルメ：海老しゃぶ、カニしゃぶ、牡蠣ときのこの天丼",
+      "keywords": [
+        "冬グルメ",
+        "海老しゃぶ",
+        "カニしゃぶ",
+        "牡蠣",
+        "天丼",
+        "期間限定"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "ゆず庵、数量限定「有頭 海老しゃぶ」「本ずわいがに かにしゃぶ」を発売。冬限定の「濃厚海老だし」も登場",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2150236.html",
+          "published": "2026-10-22T02:00:40+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-22T02:11:42.458184+00:00"
+        },
+        {
+          "title": "天丼はま田、瀬戸内産牡蠣ときのこを贅沢に盛った「牡蠣ときのこの天丼」を発売",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2150224.html",
+          "published": "2026-10-22T01:43:47+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-22T02:11:42.652700+00:00"
+        }
+      ]
+    }
   }
 ]
