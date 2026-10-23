@@ -772,5 +772,52 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-ec80b6bcc5ca281f",
+    "topic_ja": "AIエージェントの活用最前線：日本でのサービス開始と生活での活用例",
+    "title": "AI အေးဂျင့် (AI エージェント) Muse ၏ ဂျပန်နိုင်ငံတွင် ဝန်ဆောင်မှုစတင်ခြင်းနှင့် နေ့စဉ်ဘဝတွင် အသုံးချနိုင်ပုံများ",
+    "published_at": "2026-10-23T02:13:28.541208+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032094087564",
+    "sources": [
+      {
+        "title": "MetaのパーソナルAIエージェント「Muse」が日本上陸　メルカリなど連携",
+        "url": "https://www.watch.impress.co.jp/docs/news/2150567.html"
+      },
+      {
+        "title": "「Muse」日本で提供開始　MetaのAIエージェント、メルカリやマネフォ、ぴあと連携へ",
+        "url": "https://www.itmedia.co.jp/news/article/2610/23/2000002535/"
+      }
+    ],
+    "topic": {
+      "id": "auto-ec80b6bcc5ca281f",
+      "title_ja": "AIエージェントの活用最前線：日本でのサービス開始と生活での活用例",
+      "keywords": [
+        "AIエージェント",
+        "Meta Muse",
+        "メルカリ連携",
+        "マネーフォワード ME",
+        "チケットぴあ",
+        "タスク自動化"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "MetaのパーソナルAIエージェント「Muse」が日本上陸　メルカリなど連携",
+          "url": "https://www.watch.impress.co.jp/docs/news/2150567.html",
+          "published": "2026-10-23T01:23:24+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-23T02:12:14.190942+00:00"
+        },
+        {
+          "title": "「Muse」日本で提供開始　MetaのAIエージェント、メルカリやマネフォ、ぴあと連携へ",
+          "url": "https://www.itmedia.co.jp/news/article/2610/23/2000002535/",
+          "published": "2026-10-23T01:33:41+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-23T02:12:18.825006+00:00"
+        }
+      ]
+    }
   }
 ]
