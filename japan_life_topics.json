@@ -819,5 +819,52 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-a87a0a17b47ff277",
+    "topic_ja": "日本でのスマートウォッチ活用術：健康管理から日常生活の便利機能まで",
+    "title": "ဂျပန်နိုင်ငံတွင် စမတ်နာရီများကို အသုံးပြုခြင်း- ကျန်းမာရေးစီမံခန့်ခွဲမှုမှ နေ့စဉ်ဘဝအတွက် အဆင်ပြေစေသော လုပ်ဆောင်ချက်များအထိ",
+    "published_at": "2026-10-24T02:11:49.280057+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032094553023",
+    "sources": [
+      {
+        "title": "ドコモ、8980円の「スマートウォッチ03」",
+        "url": "https://www.watch.impress.co.jp/docs/news/2150808.html"
+      },
+      {
+        "title": "ガーミン、ゴルフのフォームデータを記録するGPSウォッチ「Approach S72」",
+        "url": "https://www.watch.impress.co.jp/docs/news/2149742.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-a87a0a17b47ff277",
+      "title_ja": "日本でのスマートウォッチ活用術：健康管理から日常生活の便利機能まで",
+      "keywords": [
+        "スマートウォッチ",
+        "健康管理",
+        "心拍数",
+        "睡眠モニタリング",
+        "dヘルスケア",
+        "GPSウォッチ"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "ドコモ、8980円の「スマートウォッチ03」",
+          "url": "https://www.watch.impress.co.jp/docs/news/2150808.html",
+          "published": "2026-10-23T23:30:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-24T02:10:12.424367+00:00"
+        },
+        {
+          "title": "ガーミン、ゴルフのフォームデータを記録するGPSウォッチ「Approach S72」",
+          "url": "https://www.watch.impress.co.jp/docs/news/2149742.html",
+          "published": "2026-10-24T01:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-24T02:10:10.952299+00:00"
+        }
+      ]
+    }
   }
 ]
