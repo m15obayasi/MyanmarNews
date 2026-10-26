@@ -866,5 +866,52 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-dbd4490e7748e02b",
+    "topic_ja": "日本でのデジタル個人情報管理：GoogleサービスとAIのプライバシー設定",
+    "title": "ဂျပန်တွင် ဒစ်ဂျစ်တယ် ကိုယ်ရေးကိုယ်တာ အချက်အလက်များ စီမံခန့်ခွဲခြင်း- Google ဝန်ဆောင်မှုများနှင့် AI အတွက် ကိုယ်ရေးကိုယ်တာ ဆက်တင်များ",
+    "published_at": "2026-10-26T02:16:16.250247+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032095416565",
+    "sources": [
+      {
+        "title": "Google、プライバシーポリシーに「Gmail」「Googleフォト」のデータを広告に使う例外を追加　回避方法は",
+        "url": "https://www.itmedia.co.jp/news/article/2610/26/2000002570/"
+      },
+      {
+        "title": "【西田宗千佳のイマトミライ】MetaのパーソナルAI「Muse」日本上陸　iPhone Duoと相性抜群な次の”競争軸”",
+        "url": "https://www.watch.impress.co.jp/docs/series/nishida/2150995.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-dbd4490e7748e02b",
+      "title_ja": "日本でのデジタル個人情報管理：GoogleサービスとAIのプライバシー設定",
+      "keywords": [
+        "Google",
+        "プライバシーポリシー",
+        "AIモード",
+        "パーソナルインテリジェンス",
+        "Gmail",
+        "Googleフォト"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "Google、プライバシーポリシーに「Gmail」「Googleフォト」のデータを広告に使う例外を追加　回避方法は",
+          "url": "https://www.itmedia.co.jp/news/article/2610/26/2000002570/",
+          "published": "2026-10-25T23:28:28+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-26T02:15:35.871210+00:00"
+        },
+        {
+          "title": "【西田宗千佳のイマトミライ】MetaのパーソナルAI「Muse」日本上陸　iPhone Duoと相性抜群な次の”競争軸”",
+          "url": "https://www.watch.impress.co.jp/docs/series/nishida/2150995.html",
+          "published": "2026-10-25T23:20:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-26T02:15:31.143899+00:00"
+        }
+      ]
+    }
   }
 ]
