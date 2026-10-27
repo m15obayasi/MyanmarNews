@@ -460,5 +460,24 @@
         "url": "https://myanmar-now.org/en/news/myanmar-junta-leader-to-visit-malaysia-after-migrant-returns-begin/"
       }
     ]
+  },
+  {
+    "id": "nug-basics",
+    "topic": "ミャンマーのNUGとは？",
+    "status": "published",
+    "published_at": "2026-10-27T01:38:57.588161+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/yangon.hateblo.jp/atom/entry/14945776032095840368",
+    "sources": [
+      {
+        "publisher": "english.dvb.no",
+        "title": "NUG accuses Myanmar rights commission of acting as a ‘shield’ for military atrocities",
+        "url": "https://english.dvb.no/nug-accuses-myanmar-rights-commission-of-acting-as-a-shield-for-military-atrocities/"
+      },
+      {
+        "publisher": "thediplomat.com",
+        "title": "Myanmar Resistance Finally Has a Unified Front – The Diplomat",
+        "url": "https://thediplomat.com/2026/08/myanmars-resistance-finally-has-a-unified-front/"
+      }
+    ]
   }
 ]
