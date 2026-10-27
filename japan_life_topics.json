@@ -913,5 +913,63 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-566fbba51300f025",
+    "topic_ja": "日本のホテル・グランピング最新情報：シマエナガコテージやオールインクルーシブを楽しむ秋冬の沖縄旅",
+    "title": "ဂျပန်ဟိုတယ်နှင့် ဂရန်ပင်း အသစ်အဆန်းများ- ရှီမာအဲနာဂါ (シマエナガ) ကော့တေ့ချ်နှင့် အားလုံးပါဝင်သည့် အစီအစဉ်များဖြင့် ဆောင်းဦး-ဆောင်းရာသီ အိုကီနာဝါ ခရီးစဉ်",
+    "published_at": "2026-10-27T02:14:15.292637+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032095851081",
+    "sources": [
+      {
+        "title": "「シマエナガの巣」コンセプトにした3棟限定コテージ、十勝のグランピング施設フェーリエンドルフで予約開始",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2151304.html"
+      },
+      {
+        "title": "旧横浜郵船ビルの「ザ マリタイムホテル 横浜ベイ」1月30日開業。世界の港イメージした全50室、国内初Nike Strengthジム導入",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2151295.html"
+      },
+      {
+        "title": "夏だけじゃない！　「グランドメルキュール沖縄残波岬リゾート」で過ごす、秋冬の極上オールインクルーシブ旅[Sponsored]",
+        "url": "https://travel.watch.impress.co.jp/docs/topic/special/2139018.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-566fbba51300f025",
+      "title_ja": "日本のホテル・グランピング最新情報：シマエナガコテージやオールインクルーシブを楽しむ秋冬の沖縄旅",
+      "keywords": [
+        "ホテル",
+        "グランピング",
+        "沖縄",
+        "シマエナガ",
+        "オールインクルーシブ",
+        "観光"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "「シマエナガの巣」コンセプトにした3棟限定コテージ、十勝のグランピング施設フェーリエンドルフで予約開始",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2151304.html",
+          "published": "2026-10-26T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-27T02:13:31.518175+00:00"
+        },
+        {
+          "title": "旧横浜郵船ビルの「ザ マリタイムホテル 横浜ベイ」1月30日開業。世界の港イメージした全50室、国内初Nike Strengthジム導入",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2151295.html",
+          "published": "2026-10-26T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-27T02:13:31.536522+00:00"
+        },
+        {
+          "title": "夏だけじゃない！　「グランドメルキュール沖縄残波岬リゾート」で過ごす、秋冬の極上オールインクルーシブ旅[Sponsored]",
+          "url": "https://travel.watch.impress.co.jp/docs/topic/special/2139018.html",
+          "published": "2026-10-26T15:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-27T02:13:32.311524+00:00"
+        }
+      ]
+    }
   }
 ]
