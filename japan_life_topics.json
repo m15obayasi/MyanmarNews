@@ -971,5 +971,47 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-454ac6f43a297f85",
+    "topic_ja": "日本の行政・生活情報の多言語提供サービスと活用方法",
+    "title": "ဂျပန်ရှိ အုပ်ချုပ်ရေးနှင့် လူနေမှုဘဝဆိုင်ရာ ဘာသာစုံအချက်အလက် ပေးစွမ်းမှုနှင့် အသုံးပြုပုံများ",
+    "published_at": "2026-10-28T02:08:41.437818+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032096260698",
+    "sources": [
+      {
+        "title": "生活・就労ガイドブック（出入国在留管理庁）",
+        "url": "https://www.moj.go.jp/isa/content/930004717.pdf"
+      },
+      {
+        "title": "在留カードに関するQ&A",
+        "url": "https://www.moj.go.jp/isa/publications/faq/newimmiact_4_q-and-a_page2.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-454ac6f43a297f85",
+      "title_ja": "日本の行政・生活情報の多言語提供サービスと活用方法",
+      "keywords": [
+        "外国人生活支援ポータルサイト",
+        "生活オリエンテーション動画",
+        "多言語",
+        "在留支援",
+        "出入国在留管理庁"
+      ],
+      "generated": true,
+      "kind": "administrative",
+      "sources": [
+        {
+          "title": "生活・就労ガイドブック（出入国在留管理庁）",
+          "url": "https://www.moj.go.jp/isa/content/930004717.pdf",
+          "fetched_at": "2026-10-28T02:07:55.013505+00:00"
+        },
+        {
+          "title": "在留カードに関するQ&A",
+          "url": "https://www.moj.go.jp/isa/publications/faq/newimmiact_4_q-and-a_page2.html",
+          "fetched_at": "2026-10-28T02:07:55.203829+00:00"
+        }
+      ]
+    }
   }
 ]
