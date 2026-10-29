@@ -1013,5 +1013,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-b8dee1291873c07e",
+    "topic_ja": "日本の航空会社限定コラボ商品と機内販売の利用ガイド",
+    "title": "ဂျပန်လေကြောင်းလိုင်း၏ ပူးပေါင်းထုတ်ကုန်များနှင့် လေယာဉ်ပေါ်တွင် ဝယ်ယူနိုင်သည့် ကုန်ပစ္စည်းများ အသုံးပြုနည်းလမ်းညွှန်",
+    "published_at": "2026-10-29T02:09:16.465587+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14945776032096677538",
+    "sources": [
+      {
+        "title": "JALおうちで機内販売、2種の飛行機刺しゅうを施した「ボールアンドチェーン」の限定コラボバッグ",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2151957.html"
+      },
+      {
+        "title": "JALおうちで機内販売、フェイラーのハンカチセット。飛行機をお見送り・お出迎えするワンちゃん＆ネコちゃんの絵柄",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2151945.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-b8dee1291873c07e",
+      "title_ja": "日本の航空会社限定コラボ商品と機内販売の利用ガイド",
+      "keywords": [
+        "JAL",
+        "機内販売",
+        "コラボバッグ",
+        "フェイラー",
+        "旅行"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "JALおうちで機内販売、2種の飛行機刺しゅうを施した「ボールアンドチェーン」の限定コラボバッグ",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2151957.html",
+          "published": "2026-10-28T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-29T02:08:32.434759+00:00"
+        },
+        {
+          "title": "JALおうちで機内販売、フェイラーのハンカチセット。飛行機をお見送り・お出迎えするワンちゃん＆ネコちゃんの絵柄",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2151945.html",
+          "published": "2026-10-28T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-29T02:08:32.670292+00:00"
+        }
+      ]
+    }
   }
 ]
