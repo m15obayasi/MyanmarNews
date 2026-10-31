@@ -1059,5 +1059,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-c0219119f7423f9e",
+    "topic_ja": "日本のコンビニメガ盛り・偏愛グルメと季節限定スイーツ情報",
+    "title": "ဂျပန်ရှိ ကွန်ဗင်းနီးယန့်စတိုးများမှ အထူးအသားပေး အစားအစာများနှင့် ရာသီအလိုက် အချိုပွဲများ",
+    "published_at": "2026-10-31T02:08:43.659685+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035331616596",
+    "sources": [
+      {
+        "title": "ドンキ、量や種類を増量して偏愛をさらに追及！「偏愛めし大増量祭」を実施",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2152738.html"
+      },
+      {
+        "title": "ローソン、とろける甘さのロールケーキやどらもっちなど登場「キャラメルスイーツ」を4品発売",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2152660.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-c0219119f7423f9e",
+      "title_ja": "日本のコンビニメガ盛り・偏愛グルメと季節限定スイーツ情報",
+      "keywords": [
+        "偏愛めし",
+        "大増量祭",
+        "キャラメルスイーツ",
+        "どらもっち",
+        "プレミアムロールケーキ"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "ドンキ、量や種類を増量して偏愛をさらに追及！「偏愛めし大増量祭」を実施",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2152738.html",
+          "published": "2026-10-30T08:48:33+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-31T02:06:49.388644+00:00"
+        },
+        {
+          "title": "ローソン、とろける甘さのロールケーキやどらもっちなど登場「キャラメルスイーツ」を4品発売",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2152660.html",
+          "published": "2026-10-30T06:07:48+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-10-31T02:06:49.845561+00:00"
+        }
+      ]
+    }
   }
 ]
