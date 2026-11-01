@@ -1105,5 +1105,52 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-0978f997d721ecd1",
+    "topic_ja": "日本の自然を満喫する旅：山梨のワイナリー巡りや昇仙峡の絶景、RVパークでの車中泊体験",
+    "title": "ဂျပန်နိုင်ငံ၏ သဘာဝအလှများကို ခံစားခြင်း- Yamanashi ရှိ ဝိုင်ချက်စက်ရုံများ၊ Shosenkyo ၏ လှပသောရှုခင်းများနှင့် RV Park တွင် ကားဖြင့်ညအိပ်ခြင်းအတွေ့အကြုံ",
+    "published_at": "2026-11-01T02:08:15.010754+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035332018263",
+    "sources": [
+      {
+        "title": "【ボーカリスト琴音の音楽旅】秋の山梨1泊2日旅行！　絶景にぶどうも満喫し、ワイナリーで試飲三昧",
+        "url": "https://travel.watch.impress.co.jp/docs/series/kotone/2152746.html"
+      },
+      {
+        "title": "【車中泊の拠点 RVパークを訪ねる】「ナニもない」がセールスポイント。静岡市の山中にできたばかりのRVパークに泊まってみた RVパークごほうびリゾート",
+        "url": "https://travel.watch.impress.co.jp/docs/series/rvpark/2152777.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-0978f997d721ecd1",
+      "title_ja": "日本の自然を満喫する旅：山梨のワイナリー巡りや昇仙峡の絶景、RVパークでの車中泊体験",
+      "keywords": [
+        "山梨",
+        "ワイナリー",
+        "昇仙峡",
+        "RVパーク",
+        "観光",
+        "旅行"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "【ボーカリスト琴音の音楽旅】秋の山梨1泊2日旅行！　絶景にぶどうも満喫し、ワイナリーで試飲三昧",
+          "url": "https://travel.watch.impress.co.jp/docs/series/kotone/2152746.html",
+          "published": "2026-10-30T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-01T02:07:31.341439+00:00"
+        },
+        {
+          "title": "【車中泊の拠点 RVパークを訪ねる】「ナニもない」がセールスポイント。静岡市の山中にできたばかりのRVパークに泊まってみた RVパークごほうびリゾート",
+          "url": "https://travel.watch.impress.co.jp/docs/series/rvpark/2152777.html",
+          "published": "2026-10-31T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-01T02:07:31.204908+00:00"
+        }
+      ]
+    }
   }
 ]
