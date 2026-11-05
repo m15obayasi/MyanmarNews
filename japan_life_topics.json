@@ -1152,5 +1152,63 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-1e23fa576e2a9308",
+    "topic_ja": "日本の年末年始の過ごし方とイベント：クリスマスからお正月まで",
+    "title": "ဂျပန်နိုင်ငံ၏နှစ်ကုန်ပိုင်းနှင့်နှစ်သစ်ကူးပွဲတော်များ- ခရစ္စမတ်မှနှစ်သစ်ကူးအထိ",
+    "published_at": "2026-11-05T02:08:13.277054+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035334057224",
+    "sources": [
+      {
+        "title": "ディズニーストアに一足早くクリスマスが到着。新宿の旗艦店がホリデー仕様に大変身！",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2153738.html"
+      },
+      {
+        "title": "日本最大のディズニーストア「フラッグシップ東京」開業5周年記念グッズ。ドレッシーなペアぬいぐるみ、ピンバッジほか",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2153735.html"
+      },
+      {
+        "title": "ピザーラ、最大1500円お得な「パーティーセット」公式サイト限定で販売。冬の味わいを1人でも大人数でも",
+        "url": "https://gourmet.watch.impress.co.jp/docs/news/2153804.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-1e23fa576e2a9308",
+      "title_ja": "日本の年末年始の過ごし方とイベント：クリスマスからお正月まで",
+      "keywords": [
+        "クリスマス",
+        "お正月",
+        "ディズニーストア",
+        "冬のイベント",
+        "家族",
+        "集まり"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "ディズニーストアに一足早くクリスマスが到着。新宿の旗艦店がホリデー仕様に大変身！",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2153738.html",
+          "published": "2026-11-05T01:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-05T02:07:31.482426+00:00"
+        },
+        {
+          "title": "日本最大のディズニーストア「フラッグシップ東京」開業5周年記念グッズ。ドレッシーなペアぬいぐるみ、ピンバッジほか",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2153735.html",
+          "published": "2026-11-05T01:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-05T02:07:31.505067+00:00"
+        },
+        {
+          "title": "ピザーラ、最大1500円お得な「パーティーセット」公式サイト限定で販売。冬の味わいを1人でも大人数でも",
+          "url": "https://gourmet.watch.impress.co.jp/docs/news/2153804.html",
+          "published": "2026-11-05T01:57:59+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-05T02:07:30.635798+00:00"
+        }
+      ]
+    }
   }
 ]
