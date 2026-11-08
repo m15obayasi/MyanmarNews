@@ -1210,5 +1210,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-1a5a6ab768cc5a04",
+    "topic_ja": "日本の秋から冬のおすすめ温泉地と楽しみ方",
+    "title": "ဂျပန်နိုင်ငံ၏ ဆောင်းဦးနှင့် ဆောင်းရာသီတွင် သွားရောက်လည်ပတ်သင့်သော ရေပူစမ်းဒေသများနှင့် ပျော်ရွှင်စွာ အပန်းဖြေနည်းများ",
+    "published_at": "2026-11-08T02:07:54.158924+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035335460957",
+    "sources": [
+      {
+        "title": "宝島社「一生に一度は行きたい温泉120選」。絶景風呂から秘湯まで、日本各地の“至高の温泉”をガイド",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2154513.html"
+      },
+      {
+        "title": "【若林直樹のトラベルフォトギャラリー】嵯峨野トロッコ列車（京都府）",
+        "url": "https://travel.watch.impress.co.jp/docs/series/wakabayashi/2154291.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-1a5a6ab768cc5a04",
+      "title_ja": "日本の秋から冬のおすすめ温泉地と楽しみ方",
+      "keywords": [
+        "温泉",
+        "絶景風呂",
+        "秘湯",
+        "旅行",
+        "冬のイベント"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "宝島社「一生に一度は行きたい温泉120選」。絶景風呂から秘湯まで、日本各地の“至高の温泉”をガイド",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2154513.html",
+          "published": "2026-11-06T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-08T02:07:05.276473+00:00"
+        },
+        {
+          "title": "【若林直樹のトラベルフォトギャラリー】嵯峨野トロッコ列車（京都府）",
+          "url": "https://travel.watch.impress.co.jp/docs/series/wakabayashi/2154291.html",
+          "published": "2026-11-06T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-08T02:07:05.057980+00:00"
+        }
+      ]
+    }
   }
 ]
