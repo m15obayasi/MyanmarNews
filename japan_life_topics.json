@@ -1256,5 +1256,63 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-4b57e73882921003",
+    "topic_ja": "日本のレジャー施設・アミューズメント最新情報：ゲームセンターの再開と人気タイトル",
+    "title": "ဂျပန်ရှိ ဖျော်ဖြေရေးစင်တာများ၏ နောက်ဆုံးရသတင်းများ- ဂိမ်းစင်တာများ ပြန်လည်ဖွင့်လှစ်ခြင်းနှင့် လူကြိုက်များသော ဂိမ်းများ",
+    "published_at": "2026-11-09T02:09:24.679813+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035335905316",
+    "sources": [
+      {
+        "title": "「太鼓の達人」など7日ぶり稼働　セガ系不正アクセス問題、バンナム系が試験復旧",
+        "url": "https://www.itmedia.co.jp/news/article/2611/09/2000003003/"
+      },
+      {
+        "title": "128信金の大規模障害、約6時間で復旧　「原因はサイバー攻撃ではない」",
+        "url": "https://www.itmedia.co.jp/news/article/2611/09/2000002999/"
+      },
+      {
+        "title": "情報漏えい続出でフィッシングに変化？　“その人専用詐欺メール”登場の懸念",
+        "url": "https://www.itmedia.co.jp/news/article/2611/09/2000002926/"
+      }
+    ],
+    "topic": {
+      "id": "auto-4b57e73882921003",
+      "title_ja": "日本のレジャー施設・アミューズメント最新情報：ゲームセンターの再開と人気タイトル",
+      "keywords": [
+        "ゲームセンター",
+        "不正アクセス",
+        "太鼓の達人",
+        "再開",
+        "バンダイナムコ",
+        "セガ"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "「太鼓の達人」など7日ぶり稼働　セガ系不正アクセス問題、バンナム系が試験復旧",
+          "url": "https://www.itmedia.co.jp/news/article/2611/09/2000003003/",
+          "published": "2026-11-09T01:54:04+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-09T02:07:41.985172+00:00"
+        },
+        {
+          "title": "128信金の大規模障害、約6時間で復旧　「原因はサイバー攻撃ではない」",
+          "url": "https://www.itmedia.co.jp/news/article/2611/09/2000002999/",
+          "published": "2026-11-09T00:26:19+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-09T02:07:42.157934+00:00"
+        },
+        {
+          "title": "情報漏えい続出でフィッシングに変化？　“その人専用詐欺メール”登場の懸念",
+          "url": "https://www.itmedia.co.jp/news/article/2611/09/2000002926/",
+          "published": "2026-11-08T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-09T02:07:42.243803+00:00"
+        }
+      ]
+    }
   }
 ]
