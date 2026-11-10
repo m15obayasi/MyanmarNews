@@ -1314,5 +1314,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-7d24d738f8f71e83",
+    "topic_ja": "日本の飲食店での行列を短縮するサービス「SuiSui」の利用方法",
+    "title": "ဂျပန်ရှိ စားသောက်ဆိုင်များတွင် တန်းစီစောင့်ဆိုင်းမှုကို လျှော့ချပေးမည့် \"SuiSui\" ဝန်ဆောင်မှု အသုံးပြုနည်း",
+    "published_at": "2026-11-10T02:07:47.107492+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035336314499",
+    "sources": [
+      {
+        "title": "500円で行列スキップ　“怒られ“から“あり“に進化した飲食店ファストパス「SuiSui」",
+        "url": "https://www.watch.impress.co.jp/docs/topic/2154224.html"
+      },
+      {
+        "title": "グーグル、AIモード検索でレストラン予約に対応　ぐるなび、一休など",
+        "url": "https://www.watch.impress.co.jp/docs/news/2154915.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-7d24d738f8f71e83",
+      "title_ja": "日本の飲食店での行列を短縮するサービス「SuiSui」の利用方法",
+      "keywords": [
+        "SuiSui",
+        "飲食店",
+        "ファストパス",
+        "待ち時間短縮",
+        "優先入店"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "500円で行列スキップ　“怒られ“から“あり“に進化した飲食店ファストパス「SuiSui」",
+          "url": "https://www.watch.impress.co.jp/docs/topic/2154224.html",
+          "published": "2026-11-09T23:20:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-10T02:06:59.809223+00:00"
+        },
+        {
+          "title": "グーグル、AIモード検索でレストラン予約に対応　ぐるなび、一休など",
+          "url": "https://www.watch.impress.co.jp/docs/news/2154915.html",
+          "published": "2026-11-09T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-10T02:06:59.831968+00:00"
+        }
+      ]
+    }
   }
 ]
