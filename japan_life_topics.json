@@ -1360,5 +1360,73 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-73d49a95e09ff964",
+    "topic_ja": "日本のテーマパークでの冬イベントと限定グルメの楽しみ方",
+    "title": "ဂျပန်ရှိ Theme Park များတွင် ဆောင်းတွင်းပွဲတော်များနှင့် အထူးအစားအစာများကို ခံစားခြင်း",
+    "published_at": "2026-11-11T02:07:32.834569+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035336759337",
+    "sources": [
+      {
+        "title": "冬ディズニーは、和のあったかドリンク＆スープに熱視線。話題の1杯を味わってみた【ココア/コーヒー/抹茶/お茶漬け】",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2155340.html"
+      },
+      {
+        "title": "クリスマス期間の「エレクトリカルパレード」はいつもとちょっと違うって知ってた？　真相を確かめてきました",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2155323.html"
+      },
+      {
+        "title": "ミッキーとサンタが夢の共演。ディズニーシーのハーバーショー、クリスマスver.の見どころをお届け",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2155295.html"
+      },
+      {
+        "title": "「ディズニー・クリスマス」ランドの昼パレード、ちょっとレアな雨バージョンを見てきた",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2155281.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-73d49a95e09ff964",
+      "title_ja": "日本のテーマパークでの冬イベントと限定グルメの楽しみ方",
+      "keywords": [
+        "ディズニー・クリスマス",
+        "限定ドリンク",
+        "限定フード",
+        "パレード",
+        "ハーバーショー"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "冬ディズニーは、和のあったかドリンク＆スープに熱視線。話題の1杯を味わってみた【ココア/コーヒー/抹茶/お茶漬け】",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2155340.html",
+          "published": "2026-11-10T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-11T02:06:43.380076+00:00"
+        },
+        {
+          "title": "クリスマス期間の「エレクトリカルパレード」はいつもとちょっと違うって知ってた？　真相を確かめてきました",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2155323.html",
+          "published": "2026-11-10T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-11T02:06:43.715244+00:00"
+        },
+        {
+          "title": "ミッキーとサンタが夢の共演。ディズニーシーのハーバーショー、クリスマスver.の見どころをお届け",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2155295.html",
+          "published": "2026-11-10T11:47:41+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-11T02:06:43.665238+00:00"
+        },
+        {
+          "title": "「ディズニー・クリスマス」ランドの昼パレード、ちょっとレアな雨バージョンを見てきた",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2155281.html",
+          "published": "2026-11-10T09:44:44+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-11T02:06:43.696559+00:00"
+        }
+      ]
+    }
   }
 ]
