@@ -1428,5 +1428,63 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-7275753eca3c228a",
+    "topic_ja": "AIを活用した便利なツール：音声入力レコーダーとAIメガネの最新トレンド",
+    "title": "AI ကို အသုံးပြုထားသော အသုံးဝင်သည့် ကိရိယာများ- အသံဖြင့် စာရိုက်သွင်းသည့် မှတ်တမ်းတင်ကိရိယာနှင့် AI မျက်မှန်တို့၏ နောက်ဆုံးပေါ် ခေတ်ရေစီးကြောင်း",
+    "published_at": "2026-11-13T02:06:54.951182+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035337751863",
+    "sources": [
+      {
+        "title": "アンカーAIレコーダ「Soundcore Work」に音声入力モード Typelessと連携",
+        "url": "https://www.watch.impress.co.jp/docs/news/2155965.html"
+      },
+      {
+        "title": "Google、Gemini搭載のメガネを米韓で予約開始　395ドルからで12月10日発売へ",
+        "url": "https://www.itmedia.co.jp/news/article/2611/13/2000003166/"
+      },
+      {
+        "title": "Google、高速で低価格の「Gemini 4 Hydrogen」発表　無料ユーザーも利用可能",
+        "url": "https://www.itmedia.co.jp/news/article/2611/13/2000003162/"
+      }
+    ],
+    "topic": {
+      "id": "auto-7275753eca3c228a",
+      "title_ja": "AIを活用した便利なツール：音声入力レコーダーとAIメガネの最新トレンド",
+      "keywords": [
+        "AI",
+        "音声入力",
+        "スマートグラス",
+        "Gemini",
+        "最新技術",
+        "生活家電"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "アンカーAIレコーダ「Soundcore Work」に音声入力モード Typelessと連携",
+          "url": "https://www.watch.impress.co.jp/docs/news/2155965.html",
+          "published": "2026-11-12T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-13T02:06:08.596018+00:00"
+        },
+        {
+          "title": "Google、Gemini搭載のメガネを米韓で予約開始　395ドルからで12月10日発売へ",
+          "url": "https://www.itmedia.co.jp/news/article/2611/13/2000003166/",
+          "published": "2026-11-13T00:30:33+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-13T02:06:10.337135+00:00"
+        },
+        {
+          "title": "Google、高速で低価格の「Gemini 4 Hydrogen」発表　無料ユーザーも利用可能",
+          "url": "https://www.itmedia.co.jp/news/article/2611/13/2000003162/",
+          "published": "2026-11-12T23:04:46+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-13T02:06:10.672297+00:00"
+        }
+      ]
+    }
   }
 ]
