@@ -1486,5 +1486,52 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-dddda0e6c13ceb74",
+    "topic_ja": "日本のデジタルサイネージ技術の最新トレンド：AIによる裸眼3D映像とデータセンター排熱活用",
+    "title": "ဂျပန်၏ခေတ်မီနည်းပညာများ- AI နည်းပညာသုံး မျက်မှန်မလို 3D ရုပ်ထွက်နှင့် Data Center အပူစွန့်ထုတ်မှုဖြင့် ပုစွန်မွေးမြူရေး",
+    "published_at": "2026-11-14T02:07:35.286416+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035338217484",
+    "sources": [
+      {
+        "title": "AI×裸眼3Dディスプレイ？　2D映像をその場で3D化し、見る人の目も追う　現地で確かめた",
+        "url": "https://www.itmedia.co.jp/news/article/2611/13/2000003195/"
+      },
+      {
+        "title": "データセンターの排熱でエビ養殖、NTT系が実験　育ったら食べられる？　担当者に聞いてみた",
+        "url": "https://www.itmedia.co.jp/news/article/2611/13/2000003200/"
+      }
+    ],
+    "topic": {
+      "id": "auto-dddda0e6c13ceb74",
+      "title_ja": "日本のデジタルサイネージ技術の最新トレンド：AIによる裸眼3D映像とデータセンター排熱活用",
+      "keywords": [
+        "デジタルサイネージ",
+        "裸眼3D",
+        "AIアイトラッキング",
+        "2D映像3D変換",
+        "データセンター排熱",
+        "バナメイエビ養殖"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "AI×裸眼3Dディスプレイ？　2D映像をその場で3D化し、見る人の目も追う　現地で確かめた",
+          "url": "https://www.itmedia.co.jp/news/article/2611/13/2000003195/",
+          "published": "2026-11-13T14:34:56+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-14T02:06:54.921880+00:00"
+        },
+        {
+          "title": "データセンターの排熱でエビ養殖、NTT系が実験　育ったら食べられる？　担当者に聞いてみた",
+          "url": "https://www.itmedia.co.jp/news/article/2611/13/2000003200/",
+          "published": "2026-11-13T10:45:49+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-14T02:06:55.280317+00:00"
+        }
+      ]
+    }
   }
 ]
