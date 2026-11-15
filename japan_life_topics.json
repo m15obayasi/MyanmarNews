@@ -1533,5 +1533,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-afc4b4e6f2186a3b",
+    "topic_ja": "日本の施設で楽しめるキャラクターコラボイベント情報（水族館・テーマパークなど）",
+    "title": "ဂျပန်ရှိနေရာအသီးသီးမှ ဇာတ်ကောင်များနှင့် ပူးပေါင်းပွဲများ",
+    "published_at": "2026-11-15T02:08:04.560049+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035338619806",
+    "sources": [
+      {
+        "title": "アクアパーク品川×サンリオ リトルツインスターズ アクアリウムを見てきた!",
+        "url": "https://www.watch.impress.co.jp/docs/news/2156416.html"
+      },
+      {
+        "title": "ディズニーパレードが宇都宮へ。8時30分から交通規制、観覧エリア入場は9時15分から。城址公園にダッフィーバス展示も",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2156414.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-afc4b4e6f2186a3b",
+      "title_ja": "日本の施設で楽しめるキャラクターコラボイベント情報（水族館・テーマパークなど）",
+      "keywords": [
+        "リトルツインスターズ",
+        "アクアパーク品川",
+        "サンリオキャラクター",
+        "コラボイベント",
+        "イルカのショー"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "アクアパーク品川×サンリオ リトルツインスターズ アクアリウムを見てきた!",
+          "url": "https://www.watch.impress.co.jp/docs/news/2156416.html",
+          "published": "2026-11-14T00:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-15T02:07:19.589556+00:00"
+        },
+        {
+          "title": "ディズニーパレードが宇都宮へ。8時30分から交通規制、観覧エリア入場は9時15分から。城址公園にダッフィーバス展示も",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2156414.html",
+          "published": "2026-11-13T09:28:55+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-15T02:07:21.534200+00:00"
+        }
+      ]
+    }
   }
 ]
