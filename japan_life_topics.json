@@ -1579,5 +1579,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-f14094ff6f86b9d9",
+    "topic_ja": "AIを活用した買い物の新常識：ChatGPT Walletとエージェント決済",
+    "title": "AI ကိုအသုံးပြု၍ ဈေးဝယ်ခြင်းဆိုင်ရာ နည်းလမ်းသစ်များ: ChatGPT Wallet နှင့် Agent မှငွေပေးချေမှု",
+    "published_at": "2026-11-16T02:09:49.965272+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035339106615",
+    "sources": [
+      {
+        "title": "ChatGPT Wallet、米国でスタート エージェント活用で買い物を代行",
+        "url": "https://www.watch.impress.co.jp/docs/news/2156473.html"
+      },
+      {
+        "title": "OpenAI、AIエージェントが代わりに支払う「ChatGPT Wallet」　カード番号は渡さず、購入ごとに生体認証",
+        "url": "https://www.itmedia.co.jp/news/article/2611/16/2000003208/"
+      }
+    ],
+    "topic": {
+      "id": "auto-f14094ff6f86b9d9",
+      "title_ja": "AIを活用した買い物の新常識：ChatGPT Walletとエージェント決済",
+      "keywords": [
+        "AI",
+        "エージェント",
+        "買い物",
+        "決済",
+        "ChatGPT Wallet"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "ChatGPT Wallet、米国でスタート エージェント活用で買い物を代行",
+          "url": "https://www.watch.impress.co.jp/docs/news/2156473.html",
+          "published": "2026-11-15T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-16T02:08:02.232640+00:00"
+        },
+        {
+          "title": "OpenAI、AIエージェントが代わりに支払う「ChatGPT Wallet」　カード番号は渡さず、購入ごとに生体認証",
+          "url": "https://www.itmedia.co.jp/news/article/2611/16/2000003208/",
+          "published": "2026-11-16T00:49:03+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-16T02:08:04.517893+00:00"
+        }
+      ]
+    }
   }
 ]
