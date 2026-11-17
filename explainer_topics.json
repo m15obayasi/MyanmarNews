@@ -488,5 +488,14 @@
     "retry_after": "2026-11-17T01:19:14.797752+00:00",
     "reason": "Only 1 usable trusted source(s) found for pdf-vs-eao; at least 2 are required",
     "source_count": 1
+  },
+  {
+    "id": "pdf-vs-eao",
+    "topic": "PDFと少数民族武装組織（EAO）の違いは？",
+    "status": "skipped",
+    "skipped_at": "2026-11-17T01:19:54.561084+00:00",
+    "retry_after": "2026-12-01T01:19:54.561084+00:00",
+    "reason": "Only 1 usable trusted source(s) found for pdf-vs-eao; at least 2 are required",
+    "source_count": 1
   }
 ]
