@@ -1625,5 +1625,63 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-c19b6722ac0dce4c",
+    "topic_ja": "日本で使えるAIツールの最新動向：音声AIの活用とサイバーセキュリティの脅威",
+    "title": "ဂျပန်တွင် အသုံးပြုနိုင်သော AI ကိရိယာများ၏ နောက်ဆုံးပေါ် အခြေအနေ- အသံ AI အသုံးပြုမှုနှင့် ဆိုက်ဘာလုံခြုံရေး ခြိမ်းခြောက်မှုများ",
+    "published_at": "2026-11-17T02:09:30.077596+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035339721631",
+    "sources": [
+      {
+        "title": "音声AIの「ElevenLabs」が日本の音声AI「Kotoba」を買収",
+        "url": "https://www.watch.impress.co.jp/docs/news/2156921.html"
+      },
+      {
+        "title": "グーグル、人間が介入しないAIによる脆弱性攻撃を確認　攻撃はより高速に",
+        "url": "https://www.watch.impress.co.jp/docs/news/2156870.html"
+      },
+      {
+        "title": "Google、人間の関与なしに脆弱性を見つけて悪用するAIフレームワークを初めて観測　GTIGのAI脅威レポート",
+        "url": "https://www.itmedia.co.jp/news/article/2611/16/2000003244/"
+      }
+    ],
+    "topic": {
+      "id": "auto-c19b6722ac0dce4c",
+      "title_ja": "日本で使えるAIツールの最新動向：音声AIの活用とサイバーセキュリティの脅威",
+      "keywords": [
+        "音声AI",
+        "ElevenLabs",
+        "Kotoba Technologies",
+        "サイバーセキュリティ",
+        "AIエージェント",
+        "脆弱性攻撃"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "音声AIの「ElevenLabs」が日本の音声AI「Kotoba」を買収",
+          "url": "https://www.watch.impress.co.jp/docs/news/2156921.html",
+          "published": "2026-11-17T01:39:33+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-17T02:07:48.790324+00:00"
+        },
+        {
+          "title": "グーグル、人間が介入しないAIによる脆弱性攻撃を確認　攻撃はより高速に",
+          "url": "https://www.watch.impress.co.jp/docs/news/2156870.html",
+          "published": "2026-11-16T15:01:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-17T02:07:49.650473+00:00"
+        },
+        {
+          "title": "Google、人間の関与なしに脆弱性を見つけて悪用するAIフレームワークを初めて観測　GTIGのAI脅威レポート",
+          "url": "https://www.itmedia.co.jp/news/article/2611/16/2000003244/",
+          "published": "2026-11-16T14:00:56+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-17T02:07:53.746660+00:00"
+        }
+      ]
+    }
   }
 ]
