@@ -1683,5 +1683,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-f2cee1756d2bdc43",
+    "topic_ja": "日本の金融サービスと次世代AIの活用：長期記憶を持つAIコンシェルジュで生活の悩みを解決",
+    "title": "ဂျပန်နိုင်ငံ၏ဘဏ္ဍာရေးဝန်ဆောင်မှုနှင့်မျိုးဆက်သစ် AI အသုံးပြုမှု- ရေရှည်မှတ်ဉာဏ်ရှိသော AI ၏အကူအညီဖြင့်ဘဝအခက်အခဲများကိုဖြေရှင်းခြင်း",
+    "published_at": "2026-11-18T02:11:25.700133+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035340243740",
+    "sources": [
+      {
+        "title": "三菱UFJ銀行、日本発の次世代AIを支援　長期記憶で「人生に伴走」",
+        "url": "https://www.watch.impress.co.jp/docs/news/2157259.html"
+      },
+      {
+        "title": "OpenAI、最上位モデル「GPT-6.2 Astra」と「Sol」公開 コストを抑えて高い成果",
+        "url": "https://www.watch.impress.co.jp/docs/news/2157303.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-f2cee1756d2bdc43",
+      "title_ja": "日本の金融サービスと次世代AIの活用：長期記憶を持つAIコンシェルジュで生活の悩みを解決",
+      "keywords": [
+        "次世代AI",
+        "偏在型AGI",
+        "金融サービス",
+        "AIコンシェルジュ",
+        "三菱UFJ銀行"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "三菱UFJ銀行、日本発の次世代AIを支援　長期記憶で「人生に伴走」",
+          "url": "https://www.watch.impress.co.jp/docs/news/2157259.html",
+          "published": "2026-11-18T00:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-18T02:07:52.589504+00:00"
+        },
+        {
+          "title": "OpenAI、最上位モデル「GPT-6.2 Astra」と「Sol」公開 コストを抑えて高い成果",
+          "url": "https://www.watch.impress.co.jp/docs/news/2157303.html",
+          "published": "2026-11-18T01:08:42+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-18T02:07:52.083547+00:00"
+        }
+      ]
+    }
   }
 ]
