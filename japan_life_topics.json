@@ -1729,5 +1729,63 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-124a12d3facf156d",
+    "topic_ja": "AI時代の情報セキュリティと個人情報保護：詐欺対策とプライバシー設定",
+    "title": "AI ခေတ်တွင် သတင်းအချက်အလက် လုံခြုံရေးနှင့် ကိုယ်ရေးအချက်အလက် ကာကွယ်ရေး: လိမ်လည်မှုမှ ကာကွယ်ခြင်းနှင့် ကိုယ်ရေးလုံခြုံမှု ဆက်တင်များ",
+    "published_at": "2026-11-20T02:09:03.167095+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035341242078",
+    "sources": [
+      {
+        "title": "湘南美容クリニックのSBC、162万人分の個人情報流出　パスワードは「暗号化せず保存していた」",
+        "url": "https://www.itmedia.co.jp/news/article/2611/20/2000003355/"
+      },
+      {
+        "title": "PHP「緊急」脆弱性、サービス一時停止の動き再び　ウマ娘やグラブル、イープラスなど緊急メンテ",
+        "url": "https://www.itmedia.co.jp/news/article/2611/20/2000003357/"
+      },
+      {
+        "title": "Mac版「Gemini」にユーザーの代わりにアプリを操作する「computer use」機能追加　まず米国で",
+        "url": "https://www.itmedia.co.jp/news/article/2611/20/2000003356/"
+      }
+    ],
+    "topic": {
+      "id": "auto-124a12d3facf156d",
+      "title_ja": "AI時代の情報セキュリティと個人情報保護：詐欺対策とプライバシー設定",
+      "keywords": [
+        "個人情報",
+        "情報漏えい",
+        "セキュリティ",
+        "AIエージェント",
+        "プライバシー設定",
+        "サイバーセキュリティ"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "湘南美容クリニックのSBC、162万人分の個人情報流出　パスワードは「暗号化せず保存していた」",
+          "url": "https://www.itmedia.co.jp/news/article/2611/20/2000003355/",
+          "published": "2026-11-19T23:17:42+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-20T02:07:22.985404+00:00"
+        },
+        {
+          "title": "PHP「緊急」脆弱性、サービス一時停止の動き再び　ウマ娘やグラブル、イープラスなど緊急メンテ",
+          "url": "https://www.itmedia.co.jp/news/article/2611/20/2000003357/",
+          "published": "2026-11-20T00:17:02+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-20T02:07:22.751366+00:00"
+        },
+        {
+          "title": "Mac版「Gemini」にユーザーの代わりにアプリを操作する「computer use」機能追加　まず米国で",
+          "url": "https://www.itmedia.co.jp/news/article/2611/20/2000003356/",
+          "published": "2026-11-19T23:41:04+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-20T02:07:22.968605+00:00"
+        }
+      ]
+    }
   }
 ]
