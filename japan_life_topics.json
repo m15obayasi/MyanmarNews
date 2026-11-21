@@ -1787,5 +1787,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-222de3465f11d92b",
+    "topic_ja": "G-SHOCK新型「2500シリーズ」の魅力と選び方：アナログ表示にこだわった普段使いの時計",
+    "title": "G-SHOCK နာရီအသစ် “2500 စီးရီး” ၏ ဆွဲဆောင်မှုနှင့် ရွေးချယ်နည်းလမ်းများ- နေ့စဉ်သုံးအတွက် အပ်စနစ်နာရီ",
+    "published_at": "2026-11-21T02:09:32.430953+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035341657044",
+    "sources": [
+      {
+        "title": "G-SHOCK、ブラック×グレーのスタイリッシュなモノトーン4機種",
+        "url": "https://www.watch.impress.co.jp/docs/news/2156849.html"
+      },
+      {
+        "title": "【いつモノコト】G-SHOCKの新型「2500シリーズ」に一目惚れ! ホワイトを購入した",
+        "url": "https://www.watch.impress.co.jp/docs/series/itsmo/2157277.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-222de3465f11d92b",
+      "title_ja": "G-SHOCK新型「2500シリーズ」の魅力と選び方：アナログ表示にこだわった普段使いの時計",
+      "keywords": [
+        "G-SHOCK",
+        "2500シリーズ",
+        "アナログ時計",
+        "腕時計",
+        "新商品"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "G-SHOCK、ブラック×グレーのスタイリッシュなモノトーン4機種",
+          "url": "https://www.watch.impress.co.jp/docs/news/2156849.html",
+          "published": "2026-11-21T01:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-21T02:06:45.719082+00:00"
+        },
+        {
+          "title": "【いつモノコト】G-SHOCKの新型「2500シリーズ」に一目惚れ! ホワイトを購入した",
+          "url": "https://www.watch.impress.co.jp/docs/series/itsmo/2157277.html",
+          "published": "2026-11-21T00:30:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-21T02:06:46.109635+00:00"
+        }
+      ]
+    }
   }
 ]
