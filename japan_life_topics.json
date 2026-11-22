@@ -1833,5 +1833,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-55e78e51312a53db",
+    "topic_ja": "日本の美術館・博物館の楽しみ方：有名絵画からキャラクター展まで",
+    "title": "ဂျပန်ရှိ ပြတိုက်များနှင့် အနုပညာပြခန်းများတွင် ပျော်ရွှင်စွာလည်ပတ်ခြင်း",
+    "published_at": "2026-11-22T02:08:07.546849+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035342123455",
+    "sources": [
+      {
+        "title": "ゴッホ「星月夜」だけじゃない! オルセー美術館「いまを生きる歓び」展で名画再発見",
+        "url": "https://www.watch.impress.co.jp/docs/news/2158335.html"
+      },
+      {
+        "title": "福岡「大たまごっち展」チケット先着販売が本日10時スタート。限定グッズ「シャカシャカ巾着」付きも",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2156506.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-55e78e51312a53db",
+      "title_ja": "日本の美術館・博物館の楽しみ方：有名絵画からキャラクター展まで",
+      "keywords": [
+        "美術館",
+        "博物館",
+        "オルセー美術館",
+        "ゴッホ",
+        "たまごっち展"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "ゴッホ「星月夜」だけじゃない! オルセー美術館「いまを生きる歓び」展で名画再発見",
+          "url": "https://www.watch.impress.co.jp/docs/news/2158335.html",
+          "published": "2026-11-21T11:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-22T02:07:27.140397+00:00"
+        },
+        {
+          "title": "福岡「大たまごっち展」チケット先着販売が本日10時スタート。限定グッズ「シャカシャカ巾着」付きも",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2156506.html",
+          "published": "2026-11-20T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-22T02:07:28.917601+00:00"
+        }
+      ]
+    }
   }
 ]
