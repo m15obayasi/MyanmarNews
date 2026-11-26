@@ -1879,5 +1879,52 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-cb37f37c02745a44",
+    "topic_ja": "日本のスマートホーム最新動向：玄関ドア・シャッターのMatter対応とスマート家電の連携",
+    "title": "ဂျပန်ရှိ စမတ်အိမ်များ၏ ခေတ်ရေစီးကြောင်းသစ်များ- Matter နည်းပညာဖြင့် ဝင်ပေါက်တံခါးနှင့် ရှပ်တာများ၊ စမတ်ပစ္စည်းများ ချိတ်ဆက်ခြင်း",
+    "published_at": "2026-11-26T02:11:12.432951+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035344223886",
+    "sources": [
+      {
+        "title": "アレクサから玄関ドア施錠、シャッター開閉も YKK APがMatter対応",
+        "url": "https://www.watch.impress.co.jp/docs/news/2159251.html"
+      },
+      {
+        "title": "ベルキン、iPhone・Android両対応の紛失防止機能付きウォレットスタンド",
+        "url": "https://www.watch.impress.co.jp/docs/news/2159157.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-cb37f37c02745a44",
+      "title_ja": "日本のスマートホーム最新動向：玄関ドア・シャッターのMatter対応とスマート家電の連携",
+      "keywords": [
+        "スマートホーム",
+        "Matter",
+        "玄関ドア",
+        "電動シャッター",
+        "Alexa",
+        "Google Home"
+      ],
+      "generated": true,
+      "kind": "trend",
+      "sources": [
+        {
+          "title": "アレクサから玄関ドア施錠、シャッター開閉も YKK APがMatter対応",
+          "url": "https://www.watch.impress.co.jp/docs/news/2159251.html",
+          "published": "2026-11-25T10:24:37+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-26T02:07:12.887228+00:00"
+        },
+        {
+          "title": "ベルキン、iPhone・Android両対応の紛失防止機能付きウォレットスタンド",
+          "url": "https://www.watch.impress.co.jp/docs/news/2159157.html",
+          "published": "2026-11-25T23:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-26T02:07:12.744096+00:00"
+        }
+      ]
+    }
   }
 ]
