@@ -1926,5 +1926,51 @@
         }
       ]
     }
+  },
+  {
+    "id": "auto-a1e8f3c062473242",
+    "topic_ja": "日本の年末年始の交通機関の利用と旅行計画：JR普通・快速列車乗り放題パスと割引温泉宿",
+    "title": "ဂျပန်နှစ်ကုန်နှစ်သစ်ကာလ ခရီးသွားလာရေးနှင့် ခရီးစဉ်စီမံကိန်းများ (JR ရထားလက်မှတ်နှင့် အထူးလျှော့စျေး ရေပူစမ်းဟိုတယ်များ)",
+    "published_at": "2026-11-27T02:08:29.416382+00:00",
+    "article_url": "https://blog.hatena.ne.jp/m15obayasi/myanmar-japan-info.hatenablog.com/atom/entry/14729835035344720672",
+    "sources": [
+      {
+        "title": "JR普通/快速に7日間乗り放題「北海道＆東日本パス」冬季分が本日発売。ローカル線の旅お得に",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2159626.html"
+      },
+      {
+        "title": "大江戸温泉物語ランキング2026、泉質部門1位は2年連続“圧倒的なとろみ”のTAOYA木曽路。バイキング部門は石川のどぐろ炙り/伊東の金目鯛づくし宿が頂点に",
+        "url": "https://travel.watch.impress.co.jp/docs/news/2159723.html"
+      }
+    ],
+    "topic": {
+      "id": "auto-a1e8f3c062473242",
+      "title_ja": "日本の年末年始の交通機関の利用と旅行計画：JR普通・快速列車乗り放題パスと割引温泉宿",
+      "keywords": [
+        "年末年始",
+        "交通機関",
+        "JR北海道＆東日本パス",
+        "温泉",
+        "旅行"
+      ],
+      "generated": true,
+      "kind": "lifestyle",
+      "sources": [
+        {
+          "title": "JR普通/快速に7日間乗り放題「北海道＆東日本パス」冬季分が本日発売。ローカル線の旅お得に",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2159626.html",
+          "published": "2026-11-26T21:00:00+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-27T02:07:53.024596+00:00"
+        },
+        {
+          "title": "大江戸温泉物語ランキング2026、泉質部門1位は2年連続“圧倒的なとろみ”のTAOYA木曽路。バイキング部門は石川のどぐろ炙り/伊東の金目鯛づくし宿が頂点に",
+          "url": "https://travel.watch.impress.co.jp/docs/news/2159723.html",
+          "published": "2026-11-26T11:02:12+00:00",
+          "discovery": "publisher-feed",
+          "fetched_at": "2026-11-27T02:07:53.104892+00:00"
+        }
+      ]
+    }
   }
 ]
